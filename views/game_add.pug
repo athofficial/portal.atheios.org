@@ -1,0 +1,40 @@
+extends layout
+
+block content
+  h3 Add a game asset
+  .container
+    form(method='POST', action='/game_add')
+      #form-group
+      label Game name:
+      input.form-control(name='gamename', type='text')
+      small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
+      br
+      #form-group
+      label Distribution scheme (in percent)
+      select.custom-select(name='scheme')
+        option(value='0.8') 80%, which means 20% go to You, rest to the players
+        option(value='0.5') 50%, which means 50% go to You, rest to the players
+        option(value='0.6') 60%, which means 40% go to You, rest to the players
+        option(value='0.7') 70%, which means 30% go to You, rest to the players
+        option(value='0.9') 90%, which means 10% go to You, rest to the players
+        option(value='1') 100%, all goes to the players
+      small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
+      br
+      #form-group
+      label Gaming periode (in days)
+      select.custom-select(name='periode')
+        option(value='148') 7 days to leader board resolution
+        option(value='24') 1 day to leader board resolution
+        option(value='48') 2 days to leader board resolution
+        option(value='72') 3 days to leader board resolution
+        option(value='96') 4 days to leader board resolution
+        option(value='296') 14 days to leader board resolution
+        option(value='12') 12 hours to leader board resolution
+        option(value='6') 6 hours to leader board resolution
+        option(value='3') 3 hours to leader board resolution
+        option(value='1') 1 hour to leader board resolution
+      small#depositHelp.form-text.text-muted Here You define a gaming periode after which the leader boards are getting resolved and ATH is distributed. IT is recommended to start with a week and then to reduce it, depending on the popularity of the game.
+      br
+      input.btn.btn-primary(type='submit',value='Submit')
+      small#depositHelp.form-text.text-muted When submitting a couple of things are going to happen. You will get a game id allocated, You also get an ATH gaming account for this game. Everything is free of charge and can be revoked.
+

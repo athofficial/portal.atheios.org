@@ -1,0 +1,42 @@
+extends layout
+
+block content
+  h1 Account management for #{user.username}
+  p You have logged in #{user.logincnt} times. You have currently the rank #{rank}.
+  h3 Edit account data
+  .container
+    form(method='POST', action='/update')
+      #form-group
+        label Username:
+        input.form-control(name='name', type='text', value=user.username)
+      #form-group
+        label Email:
+        input.form-control(name='email', type='text', value=user.email)
+      #form-group
+        label Your ATH mainacount
+        input.form-control(name='depositaddr',type='text', placeholder="0x...", value=user.depositaddr)
+        <small id="depositHelp" class="form-text text-muted">This should be Your main account address, as we will send money to this one if You would decide to withdraw funds from Your bloxxchain ATH address.</small>
+        input.btn.btn-primary(type='submit',value='Submit')
+        p
+
+  h3 Edit password
+  .container
+    form(method='POST', action='/updatepassword')
+      #form-group
+        label Password:
+        input.form-control(name='password',type='password')
+      #form-group
+        label Confirm:
+        input.form-control(name='password2',type='password')
+      br
+      input.btn.btn-primary(type='submit',value='Submit')
+  p
+  h3 Delete account
+  .container
+    When You delete Your account Your ATH will be lost and this step is irrevisable. In order to process the deletion You need to enter below the code 007
+    form(method='POST', action='/delete')
+      #form-group
+        label Confirmation code:
+        input.form-control(name='password',type='text')
+      br
+      input.btn.btn-primary(type='submit',value='Delete Account')

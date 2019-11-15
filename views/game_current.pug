@@ -1,0 +1,16 @@
+extends layout
+
+block content
+  h3 Current game assets
+  .container
+  if user
+    if gamesnr
+      ul.list-group
+        each game, i in games
+          li.list-group-item
+            a(href="/editgame?id=" + game.id)= game.asset_name
+    else
+      p You do not have any assets. Add Your first asset with 'Add game asset'.
+  else
+    strong Please make sure You are logged in.
+
