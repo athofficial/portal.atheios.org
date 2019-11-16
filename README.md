@@ -66,4 +66,5 @@ Finally we install PM2 and fire it up
 ```
 
 Now You can start the website with http://xxx.xxx.xxx.xxx:3002
+It should look like this one: http://portal.atheios.org
 
