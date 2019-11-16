@@ -59,5 +59,10 @@ Next we need to create the database called gamedev. For that we go to the projec
   mysql -uroot -p gamedev < basedataset.sql
 ```
 
+Finally we install PM2 and fire it up
+```
+  npm install pm2@latest -g
+  pm2 start ecosystem.json
+```
 
 
