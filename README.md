@@ -61,8 +61,9 @@ Next we need to create the database called gamedev. For that we go to the projec
 
 Finally we install PM2 and fire it up
 ```
-  npm install pm2@latest -g
-  pm2 start ecosystem.json
+  sudo npm install pm2@latest -g
+  pm2 start ecosystem.config.js 
 ```
 
+Now You can start the website with http://xxx.xxx.xxx.xxx:3002
 
