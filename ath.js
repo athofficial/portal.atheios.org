@@ -15,7 +15,7 @@ var Web3 = require('web3');
 var web3;
 const net = require('net');
 if (!process.env.production) {
-    console.log("production");
+    console.log("Production");
     web3 = new Web3(new Web3.providers.IpcProvider(process.env.HOME + '/.atheios/gath.ipc', net));
 }
 else {
