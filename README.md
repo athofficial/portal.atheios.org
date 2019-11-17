@@ -52,6 +52,11 @@ The config file has the following syntax. Replace the password and user accordin
 }
 ```
 
+Make sure You make the file only readable to the user running late node js.
+```
+  chown 0600 config.production.json
+```
+
 Next we need to create the database called gamedev. For that we go to the project root.
 ```
   cd ..
@@ -66,5 +71,5 @@ Finally we install PM2 and fire it up
 ```
 
 Now You can start the website with http://xxx.xxx.xxx.xxx:3002
-It should look like this one: http://portal.atheios.org
+It should look like this one: http://portal.atheios.org:3002
 
