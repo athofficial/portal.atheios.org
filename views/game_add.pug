@@ -3,13 +3,27 @@ extends layout
 block content
   h3 Add a game asset
   .container
+    h4 Offocial game information
+    p The information here will be published on the user portal
+      a(href='play.atheios.org')
+        |  play.atheios.org
     form(method='POST', action='/game_add')
       #form-group
       label Game name:
       input.form-control(name='gamename', type='text')
-      small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
+      small#depositHelp.form-text.text-muted Please select a name for Your game. This name will be visible in the portal description
       br
       #form-group
+      label Game description (max 512 char):
+      input.form-control(name='gamedesc', type='text')
+      small#depositHelp.form-text.text-muted Please enter a description, which addresses the game idea and makes it interesting to play.
+      br
+      #form-group
+      label A game snapshot in the exact size (640x400):
+      input.form-control(name='gamelogo', type='text')
+      small#depositHelp.form-text.text-muted
+      br
+  #form-group
       label Distribution scheme (in percent)
       select.custom-select(name='scheme')
         option(value='0.8') 80%, which means 20% go to You, rest to the players

@@ -1,0 +1,31 @@
+extends layout
+
+block content
+    img.img-fluid.w-100(src="images/onboarding.png")
+
+    h2#onboarding
+        span.bd-content-title
+            | Our onboarding process
+            a.anchorjs-link(aria-label='Anchor', data-anchorjs-icon='#', href='#onboarding', style='padding-left: 0.375em;')
+    p Want to be part of our ecosystem? Great. The onboarding process is fast and instant, like our blockchain.
+        | This is what You have to do:
+        ul
+            li Get Yourself an account on this portal. You can register in the account menu,
+            li Once You have activated Your account via a valid email, You should register Your game
+            li As for Your game You will get a 20 digit token and a secrete. Never share the secret with anyone!
+            li If You have several games, please register them to Your account seperatly
+            li After that, select any of our supported adaptations to connect Your game to the portal
+        p That is all.
+
+
+block 2ndnav
+    nav.d-none.d-xl-block.col-xl-2.bd-toc(aria-label='Secondary navigation')
+        ul.section-nav
+            li.toc-entry.toc-h2
+                a(href='#onboarding') Onboarding
+
+
+
+
+
+

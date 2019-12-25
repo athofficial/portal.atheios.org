@@ -30,6 +30,7 @@ CREATE TABLE `gameasset` (
   `asset_scheme` varchar(255) DEFAULT NULL,
   `asset_athaddr` varchar(255) NOT NULL,
   `asset_token` varchar(255) NOT NULL,
+  `asset_secret` varchar(255) NOT NULL,
   `asset_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -63,10 +64,12 @@ CREATE TABLE `user` (
   `lastlogin` datetime DEFAULT NULL,
   `register` datetime DEFAULT NULL,
   `rand` varchar(50) DEFAULT NULL,
+  `reset` varchar(128) DEFAULT NULL,
+  `resetcnt` int(11) DEFAULT NULL,
   `options` int(8) DEFAULT NULL,
   `blockchaintransact` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

@@ -1,24 +1,55 @@
 extends layout
 
 block content
-  h1= title
   img.img-fluid.w-100(src="images/spiceup.jpg")
 
-  h2 We have a proposition for You
+  h2#our-proposition
+    span.bd-content-title
+      | Our proposition
+      a.anchorjs-link(aria-label='Anchor', data-anchorjs-icon='#', href='#our-proposition', style='padding-left: 0.375em;')
   p When You develop a game there are a lot of things to take care of: the game idea, graphics, motion, physics and from where do I get the music, monetization...? Here is where we step in. We provide You a framework to earn some serious Atheios. We make Your game rewarding for people being good at it. How? Hear us out.
-  h2 Atheios is our backbone
+
+  h2#backbone
+    span.bd-content-title
+      | The Atheios backbone
+      a.anchorjs-link(aria-label='Anchor', data-anchorjs-icon='#', href='#backbone', style='padding-left: 0.375em;')
   p We are facilitating the Atheios blockchain, a blockchain targeted for gaming. We will provide tools to provide leaderboards, game resolution and blockchain access. Let us take an example:
-  p Martin found this great game designed by You. He wages 1 Atheios to play the game, after some training he has a good position in the leaderboard. If others join the game play and the competition they will spend Atheios in order to be leading the game. After a certain critera (ie 50 games played, or after a day, or after a week) the “payday” comes: by now lets say 50 Atheios are in the pot. They can be then distributed by a certain rule: first place gets maybe 30%, 2nd place 20% and 3rd place 10%. 10% go to Atheios development funds and 30% would go to You.
+  p Martin found this great game designed by You. He found it on the player portal. when starting the game, the game recognizes him as a gamer and offers him to wage 1 Atheios (1 ATH) to play
+    | the game. After some training he has a good position in the leaderboard. If others join the game play and the competition they will spend Atheios in order to lead the game.
+    | After a certain criteria (ie 50 games played, or after a day, or after a week) the “payday” comes: by now lets say 50 Atheios are in the pot.
+  p They can be then distributed by a certain rule: first place gets maybe 30%, 2nd place 20% and 3rd place 10%. 10% go to Atheios development funds and 30% would go to You.
   p We think this is where every one will win. So how much will we charge for this?
   p Nothing, nada, nix.
-  h2 Interested?
-  p Let us tell You how to onboard.
 
-  h2 Which platforms are supported
+  h2#platforms
+    span.bd-content-title
+      | Platforms supported
+      a.anchorjs-link(aria-label='Anchor', data-anchorjs-icon='#', href='#platforms', style='padding-left: 0.375em;')
   p Our intention is to do the development for a couple of platforms, but we will start with CONSTRUCT 3.
-  h3 Construct
-  img.img-fluid.w-100(src="images/construct.jpg")
 
+  h3#construct3
+    span.bd-content-title
+      | Sierra: Construct 3
+      a.anchorjs-link(aria-label='Anchor', data-anchorjs-icon='#', href='#construct3', style='padding-left: 0.375em;')
+  img.img-fluid.w-100(src="images/construct.png")
+  p We have developed a 3rd party module for Construct 3. As a game developer You can add Atheios as a third party module to offer Your players a possibility to use Atheios for gaming.
+  p The add-on is free of charge and enables You to earn Atheios with every game, but also provides statistics about Your game and much more. You can download the module
+    |
+    a(href='https://www.construct.net/en/make-games/addons/321/atheios-blockchain-module')
+      |  here.
+
+block 2ndnav
+  nav.d-none.d-xl-block.col-xl-2.bd-toc(aria-label='Secondary navigation')
+    ul.section-nav
+      li.toc-entry.toc-h2
+        a(href='#our-proposition') Our proposition
+      li.toc-entry.toc-h2
+        a(href='#backbone') The Atheios backbone
+      li.toc-entry.toc-h2
+        a(href='#platforms') Platforms supported
+        ul
+          li.toc-entry.toc-h3
+            a(href='#construct3') Construct 3
 
 
 

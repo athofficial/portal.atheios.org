@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
 const Mail=require('../mail');
+const {MISC_makeid, MISC_maketoken} = require('../misc');
 
 /* GET home page. */
 router.get('/addgame', ensureAuthenticated, function(req, res, next) {
     res.render('game_add', {
-        title: 'Add game asset'
+        title: 'Portal | Add game asset'
     });
 });
 
@@ -129,6 +130,7 @@ router.get('/editgame', ensureAuthenticated, function(req, res, next) {
                 title: 'Edit game asset',
                 gamename: rows[0].asset_name,
                 gametoken: rows[0].asset_token,
+                gamesecret: rows[0].asset_secret,
                 gameathaddr: rows[0].asset_athaddr,
                 schemeoption: schemeoptions,
                 periodeoption: periodeoptions
@@ -148,19 +150,21 @@ router.get('/currentgame', ensureAuthenticated, function(req, res, next) {
         } else {
             if (debugon)
                 console.log(rows.length);
+            var table="table";
 
             res.render('game_current', {
                 title: 'List over gaming assets',
-                gamesnr: rows.length,
-                games: rows
+                game: rows,
+                version: version
             });
         }
     });
 });
 
 router.get('/removegame', ensureAuthenticated, function(req, res, next) {
-    res.render('game_current', {
-        title: 'Remove gaming assets'
+    res.render('game_remove', {
+        title: 'Portal | Remove gaming assets',
+        version: version
     });
 });
 
@@ -197,8 +201,10 @@ router.post('/game_add', function(req, res) {
         else {
             // ToDo: Need to do a proper ath address resolution
             var athaddr="0xABC";
-            var rand = pool.makeid(50);
-            var vsql = "INSERT INTO gameasset (userid, asset_name, asset_scheme, asset_periode, asset_athaddr, asset_token, asset_creation) VALUES ('" + req.user.id + "', '" + gamename + "','" + scheme + "', '" + periode + "', '" + athaddr + "', '" + rand + "', '" + pool.mysqlNow() + "')";
+            var gametoken = MISC_maketoken(5);
+            var gamesecret = MISC_makeid(50);
+
+            var vsql = "INSERT INTO gameasset (userid, asset_name, asset_scheme, asset_periode, asset_athaddr, asset_token, asset_secret, asset_creation) VALUES ('" + req.user.id + "', '" + gamename + "','" + scheme + "', '" + periode + "', '" + athaddr + "', '" + gametoken + "', '" + gamesecret + "', '" + pool.mysqlNow() + "')";
             if (debugon)
                 console.log(vsql);
             pool.query(vsql, function (error, rows, fields) {

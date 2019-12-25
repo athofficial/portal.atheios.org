@@ -1,0 +1,23 @@
+extends layout
+
+block content
+    .container
+        .row
+            .col-sm
+                h2 Forgot Your username?
+                form(method='POST', action='/resetusername')
+                    #form-group
+                        label Email:
+                        input.form-control(name='email',type='text', autofocus, autocomplete='email')
+                    br
+                    input.btn.btn-primary(type='submit',value='Reset')
+
+            .col-sm
+                h2 Reset password
+                form(method='POST', action='/resetpassword')
+                    #form-group
+                        label Username:
+                        input.form-control(name='username',type='text', autofocus, autocomplete='username')
+                    br
+                    input.btn.btn-primary(type='submit',value='Reset')
+

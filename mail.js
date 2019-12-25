@@ -2,24 +2,21 @@ var nodemailer = require('nodemailer');
 const fs = require('fs');
 
 
-
-
-
 class Mail {
     constructor() {
         this.smtpTransport = nodemailer.createTransport({
-            host: process.env.NODEMAIL_HOST,
+            host: config.NODEMAIL_HOST,
             port: 587,
             secure: false, // true for 465, false for other ports
             auth: {
-                user: process.env.NODEMAIL_USER, // generated ethereal user
-                pass: process.env.NODEMAIL_PASS // generated ethereal password
+                user: config.NODEMAIL_USER, // generated user
+                pass: config.NODEMAIL_PASS // generated password
             }
         });
     }
     async sendMail(to, subject, html) {
         var mailOptions={
-            from: 'master@bloxxchain.info',
+            from: 'portal@atheios.org',
             to: to,
             subject: subject,
             html: html
@@ -61,7 +58,7 @@ class Mail {
         } else {
             for (i=0;i<tolist.length;i++) {
                 var mailOptions = {
-                    from: 'master@bloxxchain.info',
+                    from: 'portal@atheios.org',
                     to: tolist[i],
                     subject: subject,
                     text: text,

@@ -25,6 +25,7 @@
     "passport-local": "^1.0.0",
     "popper.js": "^1.15.0",
     "pug": "2.0.0-beta11",
-    "web3": "^1.2.1"
+    "web3": "^1.2.1",
+    "websocket": "^1.0.31"
   }
 }

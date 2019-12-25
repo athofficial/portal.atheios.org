@@ -14,14 +14,14 @@ const passport = require('passport');
 
 // Define the globals
 global.debugon=true;
-global.version="0.01";
+global.version="0.03";
 
 // Init database
-if (process.env.production) {
-    global.baseurl="http://localhost:"+process.env.PORT;
+if (config.development) {
+    global.baseurl="http://localhost:"+config.PORT;
 }
 else {
-    global.baseurl="https://gamesdev.atheios.org";
+    global.baseurl="https://portal.atheios.org";
 };
 
 // Instatiate database
@@ -35,6 +35,7 @@ let indexRouter = require('./routes/index');
 let whatsnew = require('./routes/whatsnew');
 let users = require('./routes/users');
 let gamesRouter = require('./routes/game');
+let docRouter = require('./routes/doc');
 
 var app = express();
 
@@ -110,6 +111,7 @@ app.use('/', indexRouter);
 app.use('/', whatsnew);
 app.use('/', users);
 app.use('/', gamesRouter);
+app.use('/', docRouter);
 
 
 
@@ -128,5 +130,6 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
 
 module.exports = app;

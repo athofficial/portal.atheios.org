@@ -3,12 +3,26 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const {athGetAddress, athGetBalance, athdoWithdraw} = require('../ath');
+const {MISC_makeid} = require('../misc');
+
 const Mail=require('../mail');
 
 // Register Form
 router.get('/register', function(req, res){
-  res.render('register');
+  res.render('register', {
+    title:'Portal | Register',
+    version: version
+  });
 });
+
+// Register Form
+router.get('/reset', function(req, res){
+  res.render('reset', {
+    title:'Portal | Reset',
+    version: version
+  });
+});
+
 
 // Register Proccess
 router.post('/register', function(req, res){
@@ -76,7 +90,7 @@ router.post('/register', function(req, res){
                         ('00' + date.getUTCHours()).slice(-2) + ':' +
                         ('00' + date.getUTCMinutes()).slice(-2) + ':' +
                         ('00' + date.getUTCSeconds()).slice(-2);
-                    var rand = makeid(50);
+                    var rand = MISC_makeid(50);
                     var vsql = "INSERT INTO user (username, email, password, depositaddr, athamount, logincnt, lastlogin, register, rand, options) VALUES ('" + username + "','" + email + "', '" + hash + "', '" + depositaddr + "', 0, 0,'" + date + "','" + date + "', '" + rand + "'," + option + ")";
                     console.log(vsql);
                     pool.query(vsql, function (error, rows, fields) {
@@ -85,7 +99,7 @@ router.post('/register', function(req, res){
                           console.log('>>> Error: ' + error);
                       } else {
                         confmail = new Mail();
-                        confmail.sendMail(email, "Atheios game developer account activation", 'Welcome to https://gamedev.atheios.org. Please confirm Your mail by clicking this link: ' + baseurl + '/activate?id=' + rand + ' .');
+                        confmail.sendMail(email, "Atheios game developer account activation", 'Welcome to ' + config.httphost + '. Please confirm Your mail by clicking this link: ' + config.httphost + '/activate?id=' + rand + ' .');
                         req.flash('success', 'Account is registered, but needs to be activated. Check Your email address: ' + email);
                         res.redirect('/account');
                       }
@@ -298,7 +312,15 @@ router.post('/updatepassword', function(req, res) {
 // Login Form
 router.get('/login', function(req, res){
   res.render('login', {
-    title:'GDP | Account',
+    title:'Portal | Account',
+    version: version
+  });
+});
+
+// Reset Form
+router.get('/resetpassword', function(req, res){
+  res.render('resetpassword', {
+    title:'Portal | Password reset procedure',
     version: version
   });
 });
@@ -383,15 +405,101 @@ router.get('/logout', function(req, res){
   res.redirect('/login');
 });
 
-function makeid(length) {
-  var text = "";
-  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+// Reset password Process
+router.post('/resetpassword', function(req, res, next){
+  var sql = "SELECT * FROM user WHERE username = '" + req.body.username + "'";
+  pool.query(sql, function (error, rows, fields) {
+    if (error) {
+      if (debugon)
+        console.log(' >>> DEBUG SQL failed', error);
+      throw error;
+    }
+    if (rows.length == 1) {
+      if ((rows[0].options & 8) == 1) {
+        req.flash('danger', 'You try to reset an account which is not yet activated.');
+        res.redirect('/login');
+      } else {
 
-  for (var i = 0; i < length; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+        // send a mail and move to the password resetting procedure
+        var rand = MISC_makeid(50);
+        // write to database
+        var vsql = "UPDATE user SET reset='" + rand + "', resetcnt=resetcnt+1 WHERE id=" + rows[0].id;
+        pool.query(vsql, function (error, rows1, fields) {
+          if (error) {
+            if (debugon)
+              console.log('>>> Error: ' + error);
+          }
+          confmail = new Mail();
+          confmail.sendMail(rows[0].email, "Atheios game developer account reset", 'You have requested a password reset from ' + config.httphost + '.\nYour reset code is: ' + rand + ' .');
+        });
 
-  return text;
-}
+
+        req.flash('danger', 'We sent an email to Your registered email address. Check Your email for the reset code.');
+        res.redirect('/resetpassword');
+      }
+    } else {
+      // send a mail and move to the poaasword resetting procedure
+      req.flash('danger', 'We cannot find Your username. Check Your email for the registration mail or contact our support.');
+      res.redirect('/login');
+    }
+
+  });
+});
+
+// Register Proccess
+router.post('/resettedpassword', function(req, res) {
+  const password = req.body.password;
+  const password2 = req.body.password2;
+
+  // Check if resetcode is the one we sent
+  var sql = "SELECT * FROM user WHERE reset = '" + req.body.resetcode + "'";
+  pool.query(sql, function (error, rows, fields) {
+    if (error) {
+      if (debugon)
+        console.log(' >>> DEBUG SQL failed', error);
+      throw error;
+    }
+    if (rows.length == 1) {
+      // Reset code found
+      req.checkBody('password', 'Password is required').notEmpty();
+      req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
+
+      let errors = req.validationErrors();
+
+      if (errors) {
+        res.render('account', {
+          title: 'Portal | Account update',
+          version: version,
+          errors: errors
+        })
+      } else {
+        bcrypt.genSalt(10, function (err, salt) {
+          bcrypt.hash(password, salt, function (err, hash) {
+            if (err) {
+              console.log(err);
+            }
+            // write to database
+            var vsql = "UPDATE user SET password='" + hash + "' WHERE id=" + rows[0].id;
+            pool.query(vsql, function (error, rows, fields) {
+              if (error) {
+                if (debugon)
+                  console.log('>>> Error: ' + error);
+              }
+            });
+            req.flash('success', 'Account update');
+            res.redirect('/account');
+          });
+        });
+      }
+    } else {
+      req.flash('success', 'User logged out');
+      res.redirect('/login');
+
+    }
+  });
+});
+
+
 
 
 module.exports = router;

@@ -3,14 +3,23 @@ extends layout
 block content
   h3 Current game assets
   .container
-  if user
-    if gamesnr
-      ul.list-group
-        each game, i in games
-          li.list-group-item
-            a(href="/editgame?id=" + game.id)= game.asset_name
-    else
-      p You do not have any assets. Add Your first asset with 'Add game asset'.
-  else
-    strong Please make sure You are logged in.
+    p Here You can edit Your game assets, push them for publishing, withdraw publishing or even delete You asset.
+    table.table
+      tr
+        th Game asset
+        th Publish state
+        th Delete
+      tbody
+        each rows in game
+          tr
+            td
+              a(href="/editgame?id=" + rows.id)= rows.asset_name
+            if (rows.asset_option & 0)
+              td
+                a(class="btn btn-primary btn-sm" href="" role="button") Publish
+            else
+              td
+                a(class="btn btn-secondary btn-sm" href="" role="button") Unpublish
+            td
+              a(class="btn btn-warning btn-sm" href="" role="button") Delete
 
