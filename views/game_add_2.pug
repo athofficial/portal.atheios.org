@@ -1,0 +1,16 @@
+extends layout
+
+block content
+    h3 Registering a game
+    .container
+        h4 Step 2: Game pictures
+        p For presentation in our portal we need a picture of the game in png or jpg format. The size should be 640x400 and should be representative for the game.
+        form(method='POST', action='/game_add_2', enctype='multipart/form-data')
+            label Select your profile picture:
+            input(type='file', name='profile_pic')
+            br
+            input(id='asset_token', name='asset_token', type='hidden', value=asset_token)
+            br
+            input(type='submit', name='btn_upload_profile_pic', value='Upload')
+
+            small#depositHelp.form-text.text-muted With the upload You give Atheios the right to use the uploaded picture on it's platforms for advertising and promotional needs.

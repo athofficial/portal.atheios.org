@@ -25,13 +25,23 @@ DROP TABLE IF EXISTS `gameasset`;
 CREATE TABLE `gameasset` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userid` varchar(20) NOT NULL,
-  `asset_name` varchar(255) NOT NULL,
-  `asset_periode` varchar(255) NOT NULL,
+  `asset_ready` int(8) DEFAULT NULL,
+  `asset_name` varchar(255) DEFAULT NULL,
+  `asset_periode` varchar(255) DEFAULT NULL,
   `asset_scheme` varchar(255) DEFAULT NULL,
-  `asset_athaddr` varchar(255) NOT NULL,
-  `asset_token` varchar(255) NOT NULL,
-  `asset_secret` varchar(255) NOT NULL,
+  `asset_athaddr` varchar(255) DEFAULT NULL,
+  `asset_token` varchar(255) DEFAULT NULL,
+  `asset_secret` varchar(255) DEFAULT NULL,
   `asset_creation` datetime DEFAULT NULL,
+  `asset_options` int(8) DEFAULT NULL,
+  `asset_description` varchar(512) DEFAULT NULL,
+  `asset_pic` varchar(64) DEFAULT NULL,
+  `asset_url` varchar(255) DEFAULT NULL,
+  `asset_player1` int(8) DEFAULT NULL,
+  `asset_player2` int(8) DEFAULT NULL,
+  `asset_player3` int(8) DEFAULT NULL,
+  `asset_player4` int(8) DEFAULT NULL,
+  `asset_player5` int(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;

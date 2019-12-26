@@ -338,7 +338,7 @@ router.get('/register', function(req, res){
 
 
 // Login Form
-router.get('/account', function(req, res){
+router.get('/account', function(req, res) {
   var darkmode;
   var keyprefs;
 

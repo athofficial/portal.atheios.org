@@ -11,10 +11,11 @@ const expressValidator = require('express-validator');
 const flash = require('connect-flash');
 const session = require('express-session');
 const passport = require('passport');
+const multer = require('multer');
 
 // Define the globals
 global.debugon=true;
-global.version="0.03";
+global.version="0.0.4";
 
 // Init database
 if (config.development) {
@@ -62,6 +63,8 @@ app.use(session({
   resave: true,
   saveUninitialized: true
 }));
+
+
 
 // Express Messages Middleware
 app.use(require('connect-flash')());
@@ -112,7 +115,6 @@ app.use('/', whatsnew);
 app.use('/', users);
 app.use('/', gamesRouter);
 app.use('/', docRouter);
-
 
 
 // catch 404 and forward to error handler

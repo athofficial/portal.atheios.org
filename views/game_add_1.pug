@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  h3 Registering a game
+    span.bd-content-title
+  p Registering a game is a 3 step process. It assumes that You are the game designer and have the possibility to later link in relevant information to the game to access the blockchain.
+    | If You want to check the game engines currently supported go to the
+    a(href='/') main portal page
+    |.
+  p The 3 steps to register are as follows:
+    ul
+      li Registering some general game information
+      li Uploading a game picture
+      li Configuring the game
+    | Registration is ofcourse free of charge.
+  .container
+    h4 Step 1: General game data
+    form(method='POST', action='/game_add_1' id='form1')
+      #form-group
+      label Game name:
+      input.form-control(name='gamename', type='text')
+      small#depositHelp.form-text.text-muted Please select a name for Your game. This name will be visible in the portal description
+      br
+      #form-group
+      label Game description (max 512 char):
+      textarea.form-control(name='gamedesc', rows='8', cols='64', maxlength='512' )
+      small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description the game should be played.
+      br
+      #form-group
+      label Game URL (if available):
+      input.form-control(name='gameurl', type='text', size='255')
+      small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description the game should be played.
+      br
+      input.btn.btn-primary(type='submit',value='Submit')
+      small#depositHelp.form-text.text-muted When submitting a couple of things are going to happen. You will get a game id allocated, You also get an ATH gaming account for this game. Everything is free of charge and can be revoked.
+

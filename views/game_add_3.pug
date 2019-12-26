@@ -1,0 +1,110 @@
+extends layout
+
+block content
+    h3 Registering a game
+    .container
+        h4 Step 3: General configuration data
+        form(method='POST', action='/game_add_3')
+            #form-group
+            input(id='asset_token', name='asset_token', type='hidden', value=asset_token)
+            label Distribution scheme (in percent)
+            p The first one decided how much of the put should be allocated to players, how much to You.
+            select.custom-select(name='scheme')
+                option(value='0.8') 80%, which means 20% go to You, rest to the players
+                option(value='0.5') 50%, which means 50% go to You, rest to the players
+                option(value='0.6') 60%, which means 40% go to You, rest to the players
+                option(value='0.7') 70%, which means 30% go to You, rest to the players
+                option(value='0.9') 90%, which means 10% go to You, rest to the players
+                option(value='1') 100%, all goes to the players
+            small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
+            br
+            #form-group
+            label Distribution scheme (in percent) per player. Must be 100% to work.
+            p From the player part You can decide how much should be for the first, 2nd, 3rd... up to fith player. If You want to allocate all funds to the first player, set him to 100%
+                | the rest to 0%
+            .col
+                label Player 1
+                select.custom-select(name='player1')
+                    option(value='9') 90% of the wage available to the 1st player
+                    option(value='8') 80% of the wage available to the 1st player
+                    option(value='7') 70% of the wage available to the 1st player
+                    option(value='6', selected) 60% of the wage available to the 1st player
+                    option(value='5') 50% of the wage available to the 1st player
+                    option(value='4') 40% of the wage available to the 1st player
+                    option(value='3') 30% of the wage available to the 1st player
+                    option(value='2') 20% of the wage available to the 1st player
+                    option(value='1') 10% of the wage available to the 1st player
+            .col
+                label Player 2
+                select.custom-select(name='player2')
+                    option(value='9') 90% of the wage available to the 2nd player
+                    option(value='8') 80% of the wage available to the 2nd player
+                    option(value='7') 70% of the wage available to the 2nd player
+                    option(value='6') 60% of the wage available to the 2nd player
+                    option(value='5') 50% of the wage available to the 2nd player
+                    option(value='4') 40% of the wage available to the 2nd player
+                    option(value='3' selected) 30% of the wage available to the 2nd player
+                    option(value='2') 20% of the wage available to the 2nd player
+                    option(value='1') 10% of the wage available to the 2nd player
+                    option(value='0') 0% of the wage available to the 2nd player
+            .col
+                label Player 3
+                select.custom-select(name='player3')
+                    option(value='9') 90% of the wage available to the 3rd player
+                    option(value='8') 80% of the wage available to the 3rd player
+                    option(value='7') 70% of the wage available to the 3rd player
+                    option(value='6') 60% of the wage available to the 3rd player
+                    option(value='5') 50% of the wage available to the 3rd player
+                    option(value='4') 40% of the wage available to the 3rd player
+                    option(value='3') 30% of the wage available to the 3rd player
+                    option(value='2') 20% of the wage available to the 3rd player
+                    option(value='1', selected) 10% of the wage available to the 3rd player
+                    option(value='0') 0% of the wage available to the 3rd player
+            .col
+                label Player 4
+                select.custom-select(name='player4')
+                    option(value='9') 90% of the wage available to the 4th player
+                    option(value='8') 80% of the wage available to the 4th player
+                    option(value='7') 70% of the wage available to the 4th player
+                    option(value='6') 60% of the wage available to the 4th player
+                    option(value='5') 50% of the wage available to the 4th player
+                    option(value='4') 40% of the wage available to the 4th player
+                    option(value='3') 30% of the wage available to the 4th player
+                    option(value='2') 20% of the wage available to the 4th player
+                    option(value='1') 10% of the wage available to the 4th player
+                    option(value='0', selected) 0% of the wage available to the 4th player
+            .col
+                label Player 5
+                select.custom-select(name='player5')
+                    option(value='9') 90% of the wage available to the 5th player
+                    option(value='8') 80% of the wage available to the 5th player
+                    option(value='7') 70% of the wage available to the 5th player
+                    option(value='6') 60% of the wage available to the 5th player
+                    option(value='5') 50% of the wage available to the 5th player
+                    option(value='4') 40% of the wage available to the 5th player
+                    option(value='3') 30% of the wage available to the 5th player
+                    option(value='2') 20% of the wage available to the 5th player
+                    option(value='1') 10% of the wage available to the 5th player
+                    option(value='0', selected) 0% of the wage available to the 5th player
+
+
+            small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
+            br
+            #form-group
+            label Gaming periode (in days)
+            select.custom-select(name='periode')
+                option(value='148') 7 days to leader board resolution
+                option(value='24') 1 day to leader board resolution
+                option(value='48') 2 days to leader board resolution
+                option(value='72') 3 days to leader board resolution
+                option(value='96') 4 days to leader board resolution
+                option(value='296') 14 days to leader board resolution
+                option(value='12') 12 hours to leader board resolution
+                option(value='6') 6 hours to leader board resolution
+                option(value='3') 3 hours to leader board resolution
+                option(value='1') 1 hour to leader board resolution
+            small#depositHelp.form-text.text-muted Here You define a gaming periode after which the leader boards are getting resolved and ATH is distributed. IT is recommended to start with a week and then to reduce it, depending on the popularity of the game.
+            br
+            input.btn.btn-primary(type='submit',value='Submit')
+            small#depositHelp.form-text.text-muted When submitting a couple of things are going to happen. You will get a game id allocated, You also get an ATH gaming account for this game. Everything is free of charge and can be revoked.
+
