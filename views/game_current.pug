@@ -6,14 +6,17 @@ block content
     p Here You can edit Your game assets, push them for publishing, withdraw publishing or even delete You asset.
     table.table
       tr
+        th Pic
         th Game asset
         th Publish state
         th Delete
       tbody
         each rows in game
           tr
-            td
-              a(href="/editgame?id=" + rows.id)= rows.asset_name
+          td
+            img(src="/" + rows.asset_pic, width=64)
+          td
+            a(href="/editgame?id=" + rows.id)= rows.asset_name
             if (rows.asset_option & 0)
               td
                 a(class="btn btn-primary btn-sm" href="" role="button") Publish

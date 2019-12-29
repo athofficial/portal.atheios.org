@@ -1,11 +1,13 @@
 extends layout
 
 block content
+    img.img-fluid.w-100(src="images/reset.png")
+
     .container
         .row
             .col-sm
-                h2 Forgot Your username?
-                form(method='POST', action='/resetusername')
+                h2 Remember username
+                form(method='POST', action='/resendusername')
                     #form-group
                         label Email:
                         input.form-control(name='email',type='text', autofocus, autocomplete='email')

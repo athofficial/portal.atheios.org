@@ -1,41 +1,81 @@
 extends layout
 
 block content
-  h3 Edit game assets
+  h1 Edit game assets
   .container
+    h2 Fixed asset data
     form(method='POST', action='/game_edit')
-      #form-group
-      label Game name:
-      input.form-control(name='gamename', type='text', value=gamename)
-      small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
-      br
-      #form-group
-      label Game token:
-      input.form-control(name='gametoken', type='text', value=gametoken, readonly=true)
-      small#depositHelp.form-text.text-muted This is Your game token
-      br
-      #form-group
-      label Game secret:
-      input.form-control(name='gamesecret', type='text', value=gamesecret, readonly=true)
-      small#depositHelp.form-text.text-muted This is Your game token
-      br
-      #form-group
-      label Game ATH account:
-      input.form-control(name='gameathaddr', type='text', value=gameathaddr, readonly=true)
-      small#depositHelp.form-text.text-muted This is Your allocated ATH account number
-      br
-      #form-group
-      label Distribution scheme (in percent)
-      select.custom-select(name='scheme')
-        !=schemeoption
-      small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
-      br
-      #form-group
-      label Gaming periode (in days)
-      select.custom-select(name='periode')
-        !=periodeoption
-      small#depositHelp.form-text.text-muted Here You define a gaming periode after which the leader boards are getting resolved and ATH is distributed. IT is recommended to start with a week and then to reduce it, depending on the popularity of the game.
-      br
-      input.btn.btn-primary(type='submit',value='Submit')
+      .container
+        #form-group
+        label Game name:
+        input.form-control(name='gamename', type='text', value=gamename, readonly=true)
+        small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
+        br
+        #form-group
+        label Game token:
+        input.form-control(name='gametoken', type='text', value=gametoken, readonly=true)
+        small#depositHelp.form-text.text-muted This is Your game token
+        br
+        #form-group
+        label Game secret:
+        input.form-control(name='gamesecret', type='text', value=gamesecret, readonly=true)
+        small#depositHelp.form-text.text-muted This is Your game token
+        br
+        #form-group
+        label Game ATH account:
+        input.form-control(name='gameathaddr', type='text', value=gameathaddr, readonly=true)
+        small#depositHelp.form-text.text-muted This is Your allocated ATH account number
+        br
+      h2 Configurable asset data
+      .container
+        h3 Fund schemes
+        #form-group
+        label Distribution scheme (in percent)
+        select.custom-select(name='scheme')
+          !=schemeoption
+        small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play period. You can choose from 50% up to 100%.
+          | In the case of 50% only 50% of the collected ATH will be redistributed to the players, 50% goes to You.
+        br
+        #form-group
+        label Player distribution scheme (in percent)
+        br
+        label Player 1
+        select.custom-select(name='player1')
+          !=player1option
+        label Player 2
+        select.custom-select(name='player2')
+          !=player2option
+        label Player 3
+        select.custom-select(name='player3')
+          !=player3option
+        label Player 4
+        select.custom-select(name='player4')
+          !=player4option
+        label Player 5
+        select.custom-select(name='player5')
+          !=player5option
+        small#depositHelp.form-text.text-muted Within the player distribution You can choose how to distribute between the top 5 players. Note that the sum must be always 100%
+          | You can also choose to limit the number of players which can get access to the funds by setting the equivalent player to 0%
+        br
+        #form-group
+        label Gaming periode (in days)
+        select.custom-select(name='periode')
+          !=periodeoption
+        small#depositHelp.form-text.text-muted Here You define a gaming period after which the leader boards are getting resolved and ATH is distributed. IT is recommended to start with a week and then to reduce it, depending on the popularity of the game.
+        br
+      h3 Game info
+      .container
+        label Game description (max 512 char):
+        textarea.form-control(name='gamedesc', rows='8', cols='64', maxlength='512')
+          !=gamedesc
+        small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description of the game.
+        br
+        #form-group
+        label Game URL (if available):
+        input.form-control(name='gameurl', type='text', size='255' value=gameurl)
+        small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description the game should be played.
+        br
+
+      input.btn.btn-primary(type='submit',value='Update')
       small#depositHelp.form-text.text-muted When submitting a couple of things are going to happen. You will get a game id allocated, You also get an ATH gaming account for this game. Everything is free of charge and can be revoked.
 

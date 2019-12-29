@@ -26,7 +26,7 @@ router.get('/addgame', ensureAuthenticated, function(req, res, next) {
     });
 });
 
-/* GET home page. */
+/* GET edit page. */
 router.get('/editgame', ensureAuthenticated, function(req, res, next) {
 
     let query = req.query.id;
@@ -142,18 +142,100 @@ router.get('/editgame', ensureAuthenticated, function(req, res, next) {
                 periodeoptions+="<option value='1'>1 hour to leader board resolution</option>";
             }
 
-           res.render('game_edit', {
+
+            var player1options=
+
+            res.render('game_edit', {
                 title: 'Edit game asset',
                 gamename: rows[0].asset_name,
                 gametoken: rows[0].asset_token,
                 gamesecret: rows[0].asset_secret,
                 gameathaddr: rows[0].asset_athaddr,
                 schemeoption: schemeoptions,
-                periodeoption: periodeoptions
+                periodeoption: periodeoptions,
+                player1option: buildPlayerOption(rows[0].asset_player1),
+                player2option: buildPlayerOption(rows[0].asset_player2),
+                player3option: buildPlayerOption(rows[0].asset_player3),
+                player4option: buildPlayerOption(rows[0].asset_player4),
+                player5option: buildPlayerOption(rows[0].asset_player5),
+                gamedesc: rows[0].asset_description,
+                gameurl: rows[0].asset_url
             });
         }
     });
 });
+
+function buildPlayerOption(value) {
+    var text="";
+
+    if (value=="10") {
+        text+="<option value='10' selected>100% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='10'>100% of the funds go to the player</option>";
+    }
+    if (value=="9") {
+        text+="<option value='9' selected>90% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='9'>90% of the funds go to the player</option>";
+    }
+    if (value=="8") {
+        text+="<option value='8' selected>80% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='8'>80% of the funds go to the player</option>";
+    }
+    if (value=="7") {
+        text+="<option value='7' selected>70% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='7'>70% of the funds go to the player</option>";
+    }
+    if (value=="6") {
+        text+="<option value='6' selected>60% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='6'>60% of the funds go to the player</option>";
+    }
+    if (value=="5") {
+        text+="<option value='5' selected>50% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='5'>50% of the funds go to the player</option>";
+    }
+    if (value=="4") {
+        text+="<option value='4' selected>40% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='4'>40% of the funds go to the player</option>";
+    }
+    if (value=="3") {
+        text+="<option value='3' selected>30% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='3'>30% of the funds go to the player</option>";
+    }
+    if (value=="2") {
+        text+="<option value='2' selected>20% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='2'>20% of the funds go to the player</option>";
+    }
+    if (value=="1") {
+        text+="<option value='1' selected>10% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='1'>10% of the funds go to the player</option>";
+    }
+    if (value=="0") {
+        text+="<option value='0' selected>0% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='0'>0% of the funds go to the player</option>";
+    }
+return(text);
+}
 
 router.get('/currentgame', ensureAuthenticated, function(req, res, next) {
     var sql = "SELECT * FROM gameasset WHERE userid="+req.user.id + " AND asset_ready=2";
@@ -329,11 +411,6 @@ router.post('/game_add_3', function(req, res) {
             errors: errors
         });
     } else {
-        console.log("Player 1", asset_player1);
-        console.log("Player 2", asset_player2);
-        console.log("Player 3", asset_player3);
-        console.log("Player 4", asset_player4);
-        console.log("Player 5", asset_player5);
         var sum=Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
         console.log("Sum: ", sum);
         if (sum == 10) {
@@ -381,33 +458,48 @@ router.post('/game_add_3', function(req, res) {
 
 
 router.post('/game_edit', function(req, res) {
-    const gamename = req.body.gamename;
-    const scheme = req.body.scheme;
-    const periode = req.body.periode;
-    const gametoken = req.body.gametoken;
-    const gameathaddr = req.body.gameathaddr;
+    const asset_token = req.body.gametoken;
+    const asset_scheme = req.body.scheme;
+    const asset_periode = req.body.periode;
+    const asset_player1 = req.body.player1;
+    const asset_player2 = req.body.player2;
+    const asset_player3 = req.body.player3;
+    const asset_player4 = req.body.player4;
+    const asset_player5 = req.body.player5;
+    const asset_description = req.body.gamedesc;
+    const asset_url = req.body.gameurl;
+    const asset_name = req.body.gamename;
+
 
     if (debugon)
         console.log("Gametoken", req.body);
 
 
-    req.checkBody('gamename', 'Name is required').notEmpty();
+    req.checkBody('gametoken', 'Something went wrong: No asset token').notEmpty();
+    req.checkBody('scheme', 'Something went wrong: No scheme').notEmpty();
+    req.checkBody('periode', 'Something went wrong: No periode').notEmpty();
+    req.checkBody('player1', 'Something went wrong: No player 1').notEmpty();
+    req.checkBody('player2', 'Something went wrong: No player 2').notEmpty();
+    req.checkBody('player3', 'Something went wrong: No player 3').notEmpty();
+    req.checkBody('player4', 'Something went wrong: No player 4').notEmpty();
+    req.checkBody('player5', 'Something went wrong: No player 5').notEmpty();
+    req.checkBody('gamedesc', 'Something went wrong: Missing game description').notEmpty();
 
     let errors = req.validationErrors();
     if(errors){
-        res.render('game_add', {
+        res.render('/currentgame', {
             errors:errors
         });
     } else {
-        if(isNaN(scheme) || isNaN(periode)) {
+        if(isNaN(asset_scheme) || isNaN(asset_periode)) {
             if (debugon)
                 console.log("Issue with input: " + scheme + "," + periode);
 
             req.flash('danger', 'Please specify scheme and periode with the predefined values.');
-            res.redirect('/editgame');
+            res.redirect('/currentgame');
         }
         else {
-            var vsql = "UPDATE gameasset SET asset_name='" + gamename + "', asset_scheme='" + scheme + "', asset_periode=" + periode + " WHERE asset_token='" + gametoken +"'";
+            var vsql = "UPDATE gameasset SET asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "', asset_description='" + asset_description + "', asset_url='" + asset_url + "' WHERE asset_token='" + asset_token +"'";
             if (debugon)
                 console.log(vsql);
             pool.query(vsql, function (error, rows, fields) {
@@ -416,13 +508,11 @@ router.post('/game_edit', function(req, res) {
                         console.log('>>> Error: ' + error);
                 } else {
                     confmail = new Mail();
-                    confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: "+ gamename, 'You have updated an existing game asset.');
+                    confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
                     req.flash('info', 'Asset Updated');
                     res.redirect('/currentgame');
                 }
             });
-
-
         }
     }
 });

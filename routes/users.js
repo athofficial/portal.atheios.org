@@ -446,13 +446,15 @@ router.post('/resetpassword', function(req, res, next){
   });
 });
 
-// Register Proccess
-router.post('/resettedpassword', function(req, res) {
-  const password = req.body.password;
-  const password2 = req.body.password2;
+// Reset password Process
+router.post('/resendusername', function(req, res, next) {
+  const email = req.body.email;
 
-  // Check if resetcode is the one we sent
-  var sql = "SELECT * FROM user WHERE reset = '" + req.body.resetcode + "'";
+  // Reset code found
+  req.checkBody('email', 'Email needs to be specified.').notEmpty();
+
+
+  var sql = "SELECT * FROM user WHERE email = '" + email + "'";
   pool.query(sql, function (error, rows, fields) {
     if (error) {
       if (debugon)
@@ -460,19 +462,50 @@ router.post('/resettedpassword', function(req, res) {
       throw error;
     }
     if (rows.length == 1) {
-      // Reset code found
-      req.checkBody('password', 'Password is required').notEmpty();
-      req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
-
-      let errors = req.validationErrors();
-
-      if (errors) {
-        res.render('account', {
-          title: 'Portal | Account update',
-          version: version,
-          errors: errors
-        })
+      if ((rows[0].options & 8) == 1) {
+        req.flash('danger', 'You try to query an account which is not yet activated.');
+        res.redirect('/login');
       } else {
+
+        confmail = new Mail();
+        confmail.sendMail(rows[0].email, "Atheios game developer account", 'You have requested You username from ' + config.httphost + '.\nYour username is: ' + rows[0].name + ' .');
+      }
+
+
+      req.flash('danger', 'We sent Your login name to Your email address.');
+      res.redirect('/login');
+    }
+  });
+});
+
+// Register Proccess
+router.post('/resettedpassword', function(req, res) {
+  const password = req.body.password;
+  const password2 = req.body.password2;
+
+  // Reset code found
+  req.checkBody('password', 'Password is required').notEmpty();
+  req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
+
+  let errors = req.validationErrors();
+
+  if (errors) {
+    res.render('account', {
+      title: 'Portal | Account update',
+      version: version,
+      errors: errors
+    })
+  } else {
+
+    // Check if resetcode is the one we sent
+    var sql = "SELECT * FROM user WHERE reset = '" + req.body.resetcode + "'";
+    pool.query(sql, function (error, rows, fields) {
+      if (error) {
+        if (debugon)
+          console.log(' >>> DEBUG SQL failed', error);
+        throw error;
+      }
+      if (rows.length == 1) {
         bcrypt.genSalt(10, function (err, salt) {
           bcrypt.hash(password, salt, function (err, hash) {
             if (err) {
@@ -491,12 +524,8 @@ router.post('/resettedpassword', function(req, res) {
           });
         });
       }
-    } else {
-      req.flash('success', 'User logged out');
-      res.redirect('/login');
-
-    }
-  });
+    });
+  }
 });
 
 
