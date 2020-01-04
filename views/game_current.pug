@@ -17,12 +17,12 @@ block content
             img(src="/" + rows.asset_pic, width=64)
           td
             a(href="/editgame?id=" + rows.id)= rows.asset_name
-            if (rows.asset_option & 0)
+            if (rows.asset_options & 1)
               td
-                a(class="btn btn-primary btn-sm" href="" role="button") Publish
+                a(class="btn btn-primary btn-sm" href="/publishgame?id=" + rows.id role="button") Publish
             else
               td
-                a(class="btn btn-secondary btn-sm" href="" role="button") Unpublish
+                a(class="btn btn-secondary btn-sm" href="/publishgame?id=" + rows.id, role="button") Unpublish
             td
-              a(class="btn btn-warning btn-sm" href="" role="button") Delete
+              a(class="btn btn-warning btn-sm" href="/deletegame?id=" + rows.id role="button") Delete
 
