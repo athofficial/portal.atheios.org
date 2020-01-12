@@ -7,7 +7,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const bodyParser = require('body-parser');
-const expressValidator = require('express-validator');
 const flash = require('connect-flash');
 const session = require('express-session');
 const passport = require('passport');
@@ -15,7 +14,7 @@ const multer = require('multer');
 
 // Define the globals
 global.debugon=true;
-global.version="0.0.7";
+global.version="0.0.8";
 
 // Init database
 if (config.development) {
@@ -73,23 +72,6 @@ app.use(function (req, res, next) {
   next();
 });
 
-// Express Validator Middleware
-app.use(expressValidator({
-  errorFormatter: function(param, msg, value) {
-    var namespace = param.split('.')
-        , root    = namespace.shift()
-        , formParam = root;
-
-    while(namespace.length) {
-      formParam += '[' + namespace.shift() + ']';
-    }
-    return {
-      param : formParam,
-      msg   : msg,
-      value : value
-    };
-  }
-}));
 
 // Passport Config
 require('./config/passport')(passport);

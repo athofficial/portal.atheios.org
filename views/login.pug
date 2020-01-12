@@ -5,10 +5,10 @@ block content
   form(method='POST', action='/login')
     #form-group
       label Username:
-      input.form-control(name='username',type='text', autofocus, autocomplete='username')
+      input.form-control(name='username',type='text', autofocus, autocomplete='on')
     #form-group
       label Password:
-      input.form-control(name='password',type='password' autocomplete='password')
+      input.form-control(name='password',type='password', autocomplete='on')
     br
     input.btn.btn-primary(type='submit',value='Submit')
     br

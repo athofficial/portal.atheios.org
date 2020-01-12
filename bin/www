@@ -4,12 +4,20 @@
  * Module dependencies.
  */
 
+'use strict';
+
+
+const bcrypt = require('bcryptjs');
+
+
 global.config = require("../config")();
 
 var app = require('../app');
 var debug = require('debug')('portal:server');
 var http = require('http');
 var WebSocket = require('ws');
+var CryptoJS = require("crypto-js");
+var logger = require("../logger");
 
 const {MISC_makeid, MISC_maketoken} = require('../misc');
 
@@ -21,7 +29,7 @@ const {MISC_makeid, MISC_maketoken} = require('../misc');
 
 var port = normalizePort(global.config.PORT || '3002');
 app.set('port', port);
-console.log("Server started:", global.config.httphost,":",global.config.PORT);
+logger.info("Server started: " + global.config.httphost);
 
 
 
@@ -43,60 +51,134 @@ const wss = new WebSocket.Server({ port: 3003 });
 
 wss.on('connection', (ws, req) => {
   // Let us check first if the request comes from a valid game id
-  console.log(req.url, req.headers);
+  logger.info("On connection: %s, %s",req.url, req.headers);
   var urlarray = req.url.split('/');
   // urlarray[1] is 'ws'
   // urlarray[2] is gameid
   if (urlarray[1]==="ws") {
     // initial access which we redirect to another server
-    console.log("Initial access.");
-    jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"ws:localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+    logger.info("Initial access.");
+    var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"ws:localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
     ws.send(jstring);
   } else {
     if (urlarray[1]==="fs") {
       // Redirected access
-      console.log("Redirected access.");
-      var sql = "SELECT * FROM gameasset WHERE asset_token='" + urlarray[2] + "' AND asset_options&1=1 AND asset_ready=2";
-      if (debugon)
-        console.log(sql);
+      logger.info("Redirected access.");
+      var sql = "SELECT * FROM gameasset WHERE asset_token='" + urlarray[2] + "' AND asset_ready=2";
       pool.query(sql, function (error, rows, fields) {
         if (error) {
-          console.log(error);
+          logger.error("%s",error);
           throw(error);
         } else {
-          if (debugon)
-            console.log("Game exists");
-          // Gane exists and is published
-          //  const ip = ws.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
-          console.log("Connection established.");
-          // okay we received a connect. This connect is taregtedd to the main server. In order to offload we could request to connect to a different server
-          // For that reason we will send back the config data for connection. We potentially could offload to different geografical reasons based on IP
-          // generate a nonce
-          var randstr = MISC_maketoken(5);
-          jstring = "{\"@class\":\".AuthenticatedConnectResponse\", \"nonce\":\"+ randstr +\", \"requestId\":\"0\"}";
-          ws.send(jstring);
+          if (rows.length==1) {
+            logger.info("Game exists");
+            // Gane exists and is published
+            //  const ip = ws.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
+            logger.info("Connection established.");
+            // okay we received a connect. This connect is taregtedd to the main server. In order to offload we could request to connect to a different server
+            // For that reason we will send back the config data for connection. We potentially could offload to different geografical reasons based on IP
+            // generate a nonce
+            var randstr = MISC_maketoken(5);
+            jstring = "{\"@class\":\".AuthenticatedConnectResponse\", \"nonce\":\"" + randstr + "\", \"requestId\":\"0\"}";
+            ws.send(jstring);
 
+            ws.on('message', function incoming(message) {
+              logger.info('received: %s', message);
+              // Here we handle the different incoming items
+              if (message === " ") {
+                logger.info("Keep alive");
+              } else {
 
-          ws.on('message', function incoming(message) {
-            console.log('received: %s', message);
-            // Here we handle the different incoming items
-            try {
-              var result = JSON.parse(message);
-            } catch (e) {
-              this.log('An error ocurred while parsing the JSON Data: ' + message + '; Error: ' + e);
-              return;
-            }
+                try {
+                  var result = JSON.parse(message);
+                } catch (e) {
+                  logger.error('An error ocurred while parsing the JSON Data: ' + message + '; Error: ' + e);
+                  return;
+                }
 
-            var resultType = result['@class'];
+                var resultType = result['@class'];
 
-            if (resultType === '.AuthenticatedConnectRequest') {
-              console.log("Found AuthenticatedConnectRequest")
-              var hmac = result['hmac'];
-//      var ownhmac = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(randstr, ""));
-              jstring = "{\"@class\":\".AuthenticatedConnectResponse\", \"requestId\":\"0\", \"seesionId\":\"" + randstr + "\"}";
-              ws.send(jstring);
-            }
-          });
+                if (resultType === '.AuthenticatedConnectRequest') {
+                  logger.info("Found AuthenticatedConnectRequest")
+                  var hmac = result['hmac'];
+                  var ownhmac = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(randstr, rows[0].asset_secret));
+                  if (hmac===ownhmac) {
+                    jstring = "{\"@class\":\".AuthenticatedConnectResponse\", \"requestId\":\"0\", \"sessionId\":\"" + randstr + "\"}";
+                    ws.send(jstring);
+                  } else {
+                    // Game ID cannot be found
+                    logger.warn("GameID + secret cannot be matched: %s", urlarray[2]);
+                    // TODO Maybe we need to find a solution that the  with a wrong password we are not getting repeated attempts
+                    ws.close(1006, "ERR: game secrete not correct");
+                  }
+                } else {
+                  if (resultType === '.AuthenticationRequest') {
+                    logger.info("Found AuthenticationRequest\n%s",result);
+                    var username = result['username'];
+                    var userpass = result['userpass'];
+
+                    var sql = "SELECT * FROM user WHERE username LIKE '" + username + "'";
+                    if (debugon)
+                      logger.info(sql);
+                    pool.query(sql, function (error, rows, fields) {
+                      if (error) {
+                        logger.error("%s", error);
+                        throw(error);
+                      } else {
+                        bcrypt.compare(userpass, rows[0].password).then(function (res) {
+                          // res == true
+                          if (res == true) {
+
+                            if (debugon)
+                              logger.info("User exists");
+                            var randstr = MISC_makeid(24);
+
+                            jstring = "{\n" +
+                                "  \"@class\" : \".AuthenticationResponse\",\n" +
+                                "  \"authToken\" : \"" + randstr + "\",\n" +
+                                "  \"displayName\" : \""+ rows[0].displayname +"\",\n" +
+                                "  \"newPlayer\" : false,\n" +
+                                "  \"userId\" : \"" + rows[0].id + "\",\n" +
+                                "  \"requestId\" : \""+ result['requestId']+"\"\n" +
+                                "}";
+                            ws.send(jstring);
+                            // Update the entry with the authtoken
+                            var vsql = "UPDATE user SET authtoken='" + randstr + "' WHERE id=" + rows[0].id;
+                            pool.query(vsql, function (error, rows1, fields) {
+                              if (error) {
+                                if (debugon)
+                                  logger.error('Error: %s', error);
+                                throw error;
+                              }
+                            });
+
+                          } else {
+                            logger.warn("User doesn't exist");
+                            jstring = "{\n"+
+                                "  \"@class\":\".AuthenticationResponse\"," +
+                                "  \"error\":{\"DETAILS\":\"UNRECOGNISED\"}," +
+                                "  \"newPlayer\":false," +
+                                "  \"requestId\" : \""+ result['requestId']+"\"\n" +
+                            "}";
+                            ws.send(jstring);
+
+                            // There is a problem
+                            // Deny authentication
+                          }
+
+                        });
+                      }
+                    });
+                  }
+                }
+              }
+            });
+          } else {
+            // Game ID cannot be found
+            logger.warn("GameID cannot be found:", urlarray[2]);
+            // TODO Maybe we need to find a solution that the  with a wrong Game ID we are not getting repeated attempts
+            ws.close(1011, "ERR: game secrete not correct");
+          }
         }
       });
 
@@ -174,3 +256,4 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+

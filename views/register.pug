@@ -42,9 +42,9 @@ block content
 
   form(method='POST', action='/register', onsubmit="validateCaptcha()")
     #form-group
-      label Username:
-      input.form-control(name='username',type='text',autocomplete='username')
-      small#depositHelp.form-text.text-muted This can be Your email address, but maybe better to have an individual id, as this might come up in statistics on our site and visible to other game developers
+        label Username:
+        input.form-control(name='username',type='text',autocomplete='username')
+        small#depositHelp.form-text.text-muted This can be Your email address, but maybe better to have an individual id, as this might come up in statistics on our site and visible to other game developers
     #form-group
         label Email:
         input.form-control(name='email', type='text')
@@ -59,12 +59,14 @@ block content
         label Your ATH gamedev acount
         input.form-control(name='depositaddr',type='text')
         small#depositHelp.form-text.text-muted Optional: If You do not have yet a Atheios blockchain account, keep this one empty. You can always change it at a later stage and we will provide an intermediate address in the meantime. If You want to generate Your own address now You can do i here: <a href='https://wallet.atheios.org' target='_blank'>Web wallet</a>
-
+    #form-group
+        label Nickname:
+        input.form-control(name='displayname',type='text')
+        small#depositHelp.form-text.text-muted The nickname is the name being displayed in games or on leaderboards
         img(src="images/1x1.gif" onload="createCaptcha()")
         #captcha
         input#cpatchaTextBox(type='text', placeholder='Captcha', autocomplete="off")
         input.btn.btn-primary(type='submit',value='Submit')
-
 
 
   script(src='/javascripts/passwd.js')

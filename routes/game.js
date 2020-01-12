@@ -1,4 +1,8 @@
 var express = require('express');
+var logger = require('../logger');
+// ...rest of the initial code omitted for simplicity.
+const { check, validationResult } = require('express-validator');
+
 var router = express.Router();
 const Mail=require('../mail');
 const multer = require('multer');
@@ -24,14 +28,16 @@ const storage = multer.diskStorage({
 /* GET home page. */
 router.get('/addgame', ensureAuthenticated, function(req, res, next) {
     res.render('game_add_1', {
-        title: 'Portal | Add game asset'
+        title: 'Portal | Add game asset',
+        version: version,
+        user: req.user
     });
 });
 
 /* GET delete page. */
 router.get('/deletegame', ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
-    console.log(query);
+    logger.info("Query: %s",query);
 });
 
 
@@ -39,18 +45,14 @@ router.get('/deletegame', ensureAuthenticated, function(req, res, next) {
 router.get('/editgame', ensureAuthenticated, function(req, res, next) {
 
     let query = req.query.id;
-    console.log(query);
 
     var sql = "SELECT * FROM gameasset WHERE id = '" + req.query.id + "' AND userid = '"+ req.user.id+"' AND asset_ready=2";
     pool.query(sql, function (error, rows, fields) {
         if (error) {
             if (debugon)
-                console.log(' >>> DEBUG SQL failed', error);
+                logger.error('SQL failed %s', error);
             throw error;
         } else {
-            if (debugon)
-                console.log(rows[0].asset_name);
-
             var schemeoptions="";
             if (rows[0].asset_scheme=="0.5") {
                 schemeoptions+="<option value='0.5' selected>50%, which means 50% go to You, rest to the players</option>";
@@ -249,14 +251,12 @@ return(text);
 router.get('/currentgame', ensureAuthenticated, function(req, res, next) {
     var sql = "SELECT * FROM gameasset WHERE userid="+req.user.id + " AND asset_ready=2";
     if (debugon)
-        console.log(sql);
+        logger.info("SQL: %s",sql);
     pool.query(sql, function (error, rows, fields) {
         if (error) {
-            console.log(error);
+            logger.error("Error: %s", error);
             throw(error);
         } else {
-            if (debugon)
-                console.log(rows.length);
             var table="table";
 
             res.render('game_current', {
@@ -278,15 +278,15 @@ router.get('/removegame', ensureAuthenticated, function(req, res, next) {
 
 router.get('/publishgame', ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
-    console.log(query);
 
     var vsql = "UPDATE gameasset SET asset_options=asset_options ^ b'00000001' WHERE id='" + query + "'";
     if (debugon)
-        console.log(vsql);
+        logger.info("SQL: %s",vsql);
     pool.query(vsql, function (error, rows, fields) {
         if (error) {
             if (debugon)
-                console.log('>>> Error: ' + error);
+                logger.error('Error: %s' + error);
+            throw error;
         } else {
             // Display uploaded image for user validation
             res.redirect('/currentgame');
@@ -314,31 +314,45 @@ const imageFilter = function(req, file, cb) {
 };
 
 
-router.post('/game_add_1', function(req, res) {
+router.post('/game_add_1', [
+    check('gamename').isLength({min:3, max:255}).withMessage('The game name should be between 3 and 255 char long'),
+    check('gamedesc').isLength({min:3, max:512}).withMessage('The game description should be between 3 and 512 char long')
+], function(req, res) {
     const gamename = req.body.gamename;
     const gamedesc = req.body.gamedesc;
     const gameurl = req.body.gameurl;
 
     // ToDo Check image size, we really would like to have 640x400
+    const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
+        // Build your resulting errors however you want! String, object, whatever - it works!
+        return `Error: ${msg}`;
+    };
 
-    req.checkBody('gamename', 'Name is required').notEmpty();
-    req.checkBody('gamedesc', 'Description is required').notEmpty();
 
-    let errors = req.validationErrors();
-    if(errors){
-        res.render('game_add_1', {
-            errors:errors
-        });
+    var errors = validationResult(req).formatWith(errorFormatter);
+    if(!errors.isEmpty()){
+        var errorstr="";
+        for (i=0;i<errors.array().length;i++) {
+            errorstr+=errors.array()[i];
+            if (i<errors.array().length-1) {
+                errorstr+=", ";
+            }
+
+        }
+        req.flash('danger', errorstr);
+        res.redirect('/addgame');
+
     } else {
         // First we do some housekeeping and remove all older asset entries which are not yet op to stage 2
         // and more then an 10 min late
         var vsql = "DELETE FROM gameasset WHERE asset_creation < (NOW() - INTERVAL 10 MINUTE) AND asset_ready < 2";
         if (debugon)
-            console.log(vsql);
+            logger.info("SQL: %s",vsql);
         pool.query(vsql, function (error, rows, fields) {
             if (error) {
                 if (debugon)
-                    console.log('>>> Error: ' + error);
+                    logger.error('Error: %s' + error);
+                throw error;
             } else {
                 // ToDo: Need to do a proper ath address resolution
                 var athaddr = "0xABC";
@@ -348,11 +362,12 @@ router.post('/game_add_1', function(req, res) {
                 // Stage one
                 var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_athaddr, asset_token, asset_secret, asset_description, asset_url, asset_creation) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + athaddr + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "')";
                 if (debugon)
-                    console.log(vsql);
+                    logger.info("SQL: %s", vsql);
                 pool.query(vsql, function (error, rows, fields) {
                     if (error) {
                         if (debugon)
-                            console.log('>>> Error: ' + error);
+                            logger.error('Error: %s' + error);
+                        throw error;
                     } else {
                         res.render('game_add_2', {
                             title: 'Portal | Step2 : Add game asset',
@@ -386,42 +401,41 @@ router.post('/game_add_2', function(req, res) {
             return res.send(err);
         }
         const asset_token = req.body.asset_token;
-        req.checkBody('asset_token', 'Something went wrong').notEmpty();
-        let errors = req.validationErrors();
-        if (errors) {
-            res.render('game_add_1', {
-                errors: errors
-            });
-        } else {
-            console.log("Test",req.file);
 
-            mv(req.file.path, 'public/uploads/'+req.file.filename , function(err) {
-                // handle the error
-                console.log("Error: ", err);
-            });
-            var vsql = "UPDATE gameasset SET asset_ready=asset_ready=1, asset_pic='" + 'public/uploads/'+req.file.filename + "' WHERE asset_token='" + asset_token + "'";
-            if (debugon)
-                console.log(vsql);
-            pool.query(vsql, function (error, rows, fields) {
-                if (error) {
-                    if (debugon)
-                        console.log('>>> Error: ' + error);
-                } else {
-                    // Display uploaded image for user validation
-                    res.render('game_add_3', {
-                        title: 'Portal | Step3 : Add game asset',
-                        version: version,
-                        asset_token: asset_token,
-                        user: req.user
-                    });
+        mv(req.file.path, 'public/uploads/' + req.file.filename, function (err) {
+            // handle the error
+            logger.error("Error: %s", err);
+        });
+        var vsql = "UPDATE gameasset SET asset_ready=asset_ready=1, asset_pic='" + 'uploads/' + req.file.filename + "' WHERE asset_token='" + asset_token + "'";
+        if (debugon)
+            logger.info("SQL: %s", vsql);
+        pool.query(vsql, function (error, rows, fields) {
+            if (error) {
+                if (debugon)
+                    logger.error('Error: %s' + error);
+            } else {
+                // Display uploaded image for user validation
+                res.render('game_add_3', {
+                    title: 'Portal | Step3 : Add game asset',
+                    version: version,
+                    asset_token: asset_token,
+                    user: req.user
+                });
 
-                }
-            });
-        }
+            }
+        });
     });
 });
 
-router.post('/game_add_3', function(req, res) {
+router.post('/game_add_3', [
+    check('scheme').notEmpty().withMessage('Something went wrong: No gaming scheme'),
+    check('periode').notEmpty().withMessage('Something went wrong: No gaming period'),
+    check('player1').notEmpty().withMessage('Something went wrong: No player 1'),
+    check('player2').notEmpty().withMessage('Something went wrong: No player 2'),
+    check('player3').notEmpty().withMessage('Something went wrong: No player 3'),
+    check('player4').notEmpty().withMessage('Something went wrong: No player 4'),
+    check('player5').notEmpty().withMessage('Something went wrong: No player 5')
+],function(req, res) {
     const asset_token = req.body.asset_token;
     const asset_scheme = req.body.scheme;
     const asset_periode = req.body.periode;
@@ -432,41 +446,43 @@ router.post('/game_add_3', function(req, res) {
     const asset_player5 = req.body.player5;
     const asset_options = 0;
 
-    req.checkBody('asset_token', 'Something went wrong: No asset token').notEmpty();
-    req.checkBody('scheme', 'Something went wrong: No scheme').notEmpty();
-    req.checkBody('periode', 'Something went wrong: No periode').notEmpty();
-    req.checkBody('player1', 'Something went wrong: No player 1').notEmpty();
-    req.checkBody('player2', 'Something went wrong: No player 2').notEmpty();
-    req.checkBody('player3', 'Something went wrong: No player 3').notEmpty();
-    req.checkBody('player4', 'Something went wrong: No player 4').notEmpty();
-    req.checkBody('player5', 'Something went wrong: No player 5').notEmpty();
+    const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
+        // Build your resulting errors however you want! String, object, whatever - it works!
+        return `Error: ${msg}`;
+    };
 
-    let errors = req.validationErrors();
-    if (errors) {
-        res.render('game_add_3', {
-            errors: errors
-        });
+    var errors = validationResult(req).formatWith(errorFormatter);
+    if(!errors.isEmpty()){
+        var errorstr="";
+        for (i=0;i<errors.array().length;i++) {
+            errorstr+=errors.array()[i];
+            if (i<errors.array().length-1) {
+                errorstr+=", ";
+            }
+
+        }
+        req.flash('danger', errorstr);
+        res.redirect('/game_add3');
     } else {
         var sum=Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
-        console.log("Sum: ", sum);
         if (sum == 10) {
-            console.log("Update success")
+            logger.info("Update success");
             var vsql = "UPDATE gameasset SET asset_ready=2, asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
             if (debugon)
-                console.log(vsql);
+                logger.info("SQL: %s", vsql);
             pool.query(vsql, function (error, rows, fields) {
                 if (error) {
                     if (debugon)
-                        console.log('>>> Error: ' + error);
+                        logger.error('>>> Error: %s' + error);
+                    throw error;
                 } else {
                     var sql = "SELECT * FROM gameasset WHERE asset_token = '" + asset_token+"'";
                     pool.query(sql, function (error, rows, fields) {
                         if (error) {
                             if (debugon)
-                                console.log(' >>> DEBUG SQL failed', error);
+                                logger.error('>>> Error: %s' + error);
                             throw error;
                         } else {
-
                             confmail = new Mail();
                             confmail.sendMail(req.user.email, "Atheios Portal: An asset has been created: " + rows[0].asset_name, 'A game asset has been created. Gametoken: ' + asset_token);
                             req.flash('info', 'Asset created');
@@ -506,11 +522,6 @@ router.post('/game_edit', function(req, res) {
     const asset_url = req.body.gameurl;
     const asset_name = req.body.gamename;
 
-
-    if (debugon)
-        console.log("Gametoken", req.body);
-
-
     req.checkBody('gametoken', 'Something went wrong: No asset token').notEmpty();
     req.checkBody('scheme', 'Something went wrong: No scheme').notEmpty();
     req.checkBody('periode', 'Something went wrong: No periode').notEmpty();
@@ -528,20 +539,17 @@ router.post('/game_edit', function(req, res) {
         });
     } else {
         if(isNaN(asset_scheme) || isNaN(asset_periode)) {
-            if (debugon)
-                console.log("Issue with input: " + scheme + "," + periode);
-
-            req.flash('danger', 'Please specify scheme and periode with the predefined values.');
+           req.flash('danger', 'Please specify scheme and periode with the predefined values.');
             res.redirect('/currentgame');
         }
         else {
             var vsql = "UPDATE gameasset SET asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "', asset_description='" + asset_description + "', asset_url='" + asset_url + "' WHERE asset_token='" + asset_token +"'";
             if (debugon)
-                console.log(vsql);
+               logger.info("SQL: %s",vsql);
             pool.query(vsql, function (error, rows, fields) {
                 if (error) {
                     if (debugon)
-                        console.log('>>> Error: ' + error);
+                        logger.error('Error: %s' + error);
                 } else {
                     confmail = new Mail();
                     confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
