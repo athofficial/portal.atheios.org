@@ -14,20 +14,17 @@ var Web3 = require('web3');
 
 var web3;
 const net = require('net');
-if (!process.env.production) {
-    console.log("Production");
+if (!config.development) {
     web3 = new Web3(new Web3.providers.IpcProvider(process.env.HOME + '/.atheios/gath.ipc', net));
 }
 else {
-    console.log("Development");
     web3 = new Web3(new Web3.providers.IpcProvider(process.env.HOME +'/Library/atheios/gath.ipc', net));
 }
 
 
 
 var version = web3.version;
-console.log(" >>> DEBUG version: " + version);
-const ATHPASS="2334frrweq536474hdbvsadjinu5gp34ngturqn";
+const ATHPASS=config.ATHPASS;
 const ATHFEE= "0.00242002";
 
 exports.athGetAddress = function(cb) {
@@ -52,7 +49,7 @@ exports.athGetBalance = function(fromaddress, cb) {
     var accounts;
     var athaddress;
     var athamount;
-    var weiamount;
+    var weiamount="";
 
     if (debugon)
         console.log('>>> DEBUG Address to get balance: ', fromaddress);
@@ -62,11 +59,11 @@ exports.athGetBalance = function(fromaddress, cb) {
             // Any operations on the data retrieved from the query here.
             if (debugon)
                 console.log('>>> DEBUG Address to get balance: ', fromaddress);
-            cb(error, null);
+            throw error;
         }
         if (debugon)
             console.log('>>> DEBUG Amount in Wei', weiamount);
-        athamount = web3.utils.fromWei(weiamount, 'ether');
+        athamount = web3.utils.fromWei(weiamount.toString(), 'ether');
         cb(0, athamount);
     });
 }

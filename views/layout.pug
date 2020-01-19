@@ -34,9 +34,6 @@ body
             a.h5.nav-link(href='/').text-light
               | Home
               span.sr-only (current)
-          li.nav-item.active.text-light
-            a.h5.nav-link(href='/whatsnew').text-light
-              | What's new
           li.nav-item.dropdown
             if !user
               a#navbarDropdown.h5.nav-link.text-light.dropdown-toggle(href='#', role='button', data-toggle='dropdown', aria-haspopup='true', aria-expanded='false')
@@ -58,12 +55,13 @@ body
               | Atheios links
             .dropdown-menu.dropdown-menu-right(aria-labelledby='navbarDropdown')
               a.dropdown-item.disabled(href='https://portal.atheios.org') Atheios Game Developer portal
+                a.dropdown-item(href='/whatsnew') What is new
               .dropdown-divider
               a.dropdown-item(href='https://www.atheios.org') Atheios website
               a.dropdown-item(href='https://explorer.atheios.org') Atheios explorer
               a.dropdown-item(href='https://stats.atheios.org') Atheios statistics
               a.dropdown-item(href='https://api.atheios.org') Atheios API
-              a.dropdown-item(href='https://play.atheios.org') Atheios user portal
+              a.dropdown-item(href='https://play.atheios.org') Atheios Play
               a.dropdown-item(href='https://docs.atheios.org') Atheios documentation
               .dropdown-divider
               a.dropdown-item(href='https://bloxxchain.atheios.org') Bloxxchain
