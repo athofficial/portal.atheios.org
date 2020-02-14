@@ -72,7 +72,13 @@ wss.on('connection', (ws, req) => {
   if (urlarray[1]==="ws") {
     // initial access which we redirect to another server
     logger.info("Initial access.");
-    var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"ws:localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+    if (config.development) {
+      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+    }
+    else {
+      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://portal.atheios.org:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+    };
+
     ws.send(jstring);
   } else {
     if (urlarray[1] === "fs") {
