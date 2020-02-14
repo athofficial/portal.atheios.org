@@ -45,11 +45,14 @@ class Database {
             if (error) {
                 if (debugon)
                     console.log('DEBUG >>> ', error);
-                cb(error,null);
+                cb(error, null);
             } else {
                 cb(null, rows);
             }
         });
+    }
+    escape(arg) {
+        return(this.connection.escape(arg));
     }
     queryuser( userId, cb) {
         var sql = "SELECT * FROM user WHERE id=" + userId;

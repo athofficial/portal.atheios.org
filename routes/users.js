@@ -6,7 +6,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const {athGetAddress, athGetBalance, athdoWithdraw} = require('../ath');
-const {MISC_makeid} = require('../misc');
+const {MISC_ensureAuthenticated, MISC_validation, MISC_makeid, MISC_maketoken} = require('../misc');
 
 const Mail=require('../mail');
 
@@ -115,7 +115,7 @@ router.get('/register', function(req, res){
 
 
 // Login Form
-router.get('/account', function(req, res) {
+router.get('/account', MISC_ensureAuthenticated, function(req, res) {
   var darkmode;
   var keyprefs;
 
@@ -139,7 +139,8 @@ router.get('/account', function(req, res) {
       athGetBalance(rows[0].athaddr, async(error,amount) => {
         res.render("account", {
           title: 'Portal | Account',
-          version: version
+          version: version,
+          amount: amount
         });
       });
     });
@@ -150,7 +151,7 @@ router.get('/account', function(req, res) {
 });
 
 // logout
-router.get('/logout', function(req, res){
+router.get('/logout', MISC_ensureAuthenticated, function(req, res){
   req.logout();
   req.flash('success', 'You are logged out');
   res.redirect('/login');
@@ -205,22 +206,16 @@ router.post('/preferences', function(req, res){
 
 // Register Proccess
 router.post('/updatepassword', [
-      check('password').notEmpty(),
-      check('password2').equals('password')
+      check('password').notEmpty().withMessage("Password cannot be empty"),
+      check('password2').notEmpty().withMessage("Password cannot be empty")
     ],
     function(req, res) {
   const password = req.body.password;
   const password2 = req.body.password2;
   if (req.user) {
 
-    const errors = validationResult(req);
-
-    if(!errors.isEmpty()){
-      res.render('login', {
-        title: 'Portal | Account update',
-        version: version,
-        errors: errors
-      })
+    if (!MISC_validation(req)) {
+      res.redirect('/account');
     } else {
       bcrypt.genSalt(10, function (err, salt) {
         bcrypt.hash(password, salt, function (err, hash) {
@@ -237,14 +232,14 @@ router.post('/updatepassword', [
             }
           });
           req.flash('success', 'Account update');
-          res.redirect('/users/account');
+          res.redirect('/account');
         });
       });
     }
   }
   else {
     req.flash('success', 'User logged out');
-    res.redirect('/users/login');
+    res.redirect('/login');
 
   }
 });
@@ -254,29 +249,15 @@ router.post('/updatepassword', [
 
 // Login Process
 router.post('/login', [
-    check('username').isLength({min:3,max:20}).withMessage("Check the length of the username.")
+    check('username').isLength({min:3,max:20}).withMessage("Check the length of the username."),
+    check('password').notEmpty().withMessage("Please specify password")
 ],function(req, res, next){
 
-  const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
-    // Build your resulting errors however you want! String, object, whatever - it works!
-    return `Error: ${msg}`;
-  };
-
-
-  var errors = validationResult(req).formatWith(errorFormatter);
-  if(!errors.isEmpty()){
-    var errorstr="";
-    for (i=0;i<errors.array().length;i++) {
-      errorstr+=errors.array()[i];
-      if (i<errors.array().length-1) {
-        errorstr+=", ";
-      }
-
-    }
-    req.flash('danger', errorstr);
+  if (!MISC_validation(req)) {
     res.redirect('/login');
   } else {
-    var sql = "SELECT * FROM user WHERE username = '" + req.body.username + "'";
+    var sql = "SELECT * FROM user WHERE username =" + (req.body.username);
+    logger.info("SQL: %s", sql);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -302,15 +283,10 @@ router.post('/login', [
 router.post('/resetpassword', [
   check('username').isLength({min:3,max:20})
 ],function(req, res, next){
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
-    res.render('login', {
-      title: 'Portal | Account reset',
-      version: version,
-      errors: errors
-    })
+  if (!MISC_validation(req)) {
+    res.redirect('/login');
   } else {
-    var sql = "SELECT * FROM user WHERE username = '" + req.body.username + "'";
+    var sql = "SELECT * FROM user WHERE username = " + pool.escape(req.body.username);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -356,17 +332,11 @@ router.post('/resendusername', [
   check('email').notEmpty()
 ],function(req, res, next) {
   const email = req.body.email;
-  const errors = validationResult(req);
-
-  if(!errors.isEmpty()){
-    res.render('login', {
-      title: 'Portal | Account login',
-      version: version,
-      errors: errors
-    })
+  if (!MISC_validation(req)) {
+    res.redirect('/login');
   } else {
 
-    var sql = "SELECT * FROM user WHERE email = '" + email + "'";
+    var sql = "SELECT * FROM user WHERE email = " + pool.escape(email);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -393,28 +363,18 @@ router.post('/resendusername', [
 
 // Register Proccess
 router.post('/resettedpassword', [
-  check('password').notEmpty(),
-  check('password').equals('password')
+    check('password').notEmpty(),
+    check('password2').notEmpty
 ],function(req, res) {
   const password = req.body.password;
   const password2 = req.body.password2;
 
-  // Reset code found
-  req.checkBody('password', 'Password is required').notEmpty();
-  req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
-
-  let errors = req.validationErrors();
-
-  if(!errors.isEmpty()){
-    res.render('login', {
-      title: 'Portal | Account login',
-      version: version,
-      errors: errors
-    })
+  if (!MISC_validation(req)) {
+    res.redirect('/login');
   } else {
 
     // Check if resetcode is the one we sent
-    var sql = "SELECT * FROM user WHERE reset = '" + req.body.resetcode + "'";
+    var sql = "SELECT * FROM user WHERE reset = " + pool.escape(req.body.resetcode);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -469,14 +429,11 @@ router.post('/register', [
   else
     var option=8;
 
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
-    res.render('register', {
-      errors:errors
-    });
+  if (!MISC_validation(req)) {
+    res.redirect('/register');
   } else {
     // Check if username is already taken
-    var sql = "SELECT * FROM user WHERE email = '" + email + "'";
+    var sql = "SELECT * FROM user WHERE email = " + pool.escape(email);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -484,7 +441,7 @@ router.post('/register', [
         throw error;
       } else {
         if (rows.length == 0) {
-          var sql = "SELECT * FROM user WHERE username = '" + username + "'";
+          var sql = "SELECT * FROM user WHERE username = " + pool.escape(username);
           pool.query(sql, function (error, rows, fields) {
             if (error) {
               if (debugon)
@@ -500,16 +457,8 @@ router.post('/register', [
 
 
                     // write to database
-                    var date;
-                    date = new Date();
-                    date = date.getUTCFullYear() + '-' +
-                        ('00' + (date.getUTCMonth() + 1)).slice(-2) + '-' +
-                        ('00' + date.getUTCDate()).slice(-2) + ' ' +
-                        ('00' + date.getUTCHours()).slice(-2) + ':' +
-                        ('00' + date.getUTCMinutes()).slice(-2) + ':' +
-                        ('00' + date.getUTCSeconds()).slice(-2);
                     var rand = MISC_makeid(50);
-                    var vsql = "INSERT INTO user (displayname, username, email, password, depositaddr, athamount, logincnt, lastlogin, register, rand, options, type) VALUES ('" + displayname + "','" + username + "','" + email + "', '" + hash + "', '" + depositaddr + "', 0, 0,'" + date + "','" + date + "', '" + rand + "'," + option + ", 0)";
+                    var vsql = "INSERT INTO user (displayname, username, email, password, depositaddr, athamount, logincnt, lastlogin, register, rand, options, type) VALUES ('" + displayname + "','" + username + "','" + email + "', '" + hash + "', '" + depositaddr + "', 0, 0,'" + pool.mysqlNow() + "','" + pool.mysqlNow() + "', '" + rand + "'," + option + ", 0)";
                     logger.info("SQL: %s" ,vsql);
                     pool.query(vsql, function (error, rows, fields) {
                       if (error) {
@@ -542,27 +491,20 @@ router.post('/register', [
 
 // Register Proccess
 router.post('/update', [
-  check('name').notEmpty(),
-  check('name').isLength( {min: 1, max:20}),
+  check('displayname').notEmpty(),
+  check('displayname').isLength( {min: 1, max:20}).withMessage("Your displayname should be at least 1 max 20 char long"),
   check('email').isEmail()
 ], function(req, res){
   if (req.user) {
-    const name = req.body.name;
+    const displayname = req.body.displayname;
     const email = req.body.email;
     const athaddress = req.body.athaddress;
-    const depositaddr = req.body.depositaddr;
 
-    const errors = validationResult(req);
-
-    if(!errors.isEmpty()){
-      res.render('update', {
-        title: 'Portal | Account update',
-        version: version,
-        errors: errors
-      });
+    if (!MISC_validation(req)) {
+      res.redirect('/update');
     } else {
-      var vsql = "UPDATE user SET user='" + name + "', email='" + email + "', depositaddr='" + depositaddr +"' WHERE id=" + req.user.id;
-      logger.info("SWL: %s", vsql);
+      var vsql = "UPDATE user SET displayname=" + pool.escape(displayname) + ", email=" + pool.escape(email) + " WHERE id=" + parseInt(req.user.id);
+      logger.info("SQL: %s", vsql);
       pool.query(vsql, function (error, rows, fields) {
         if (error) {
           if (debugon)

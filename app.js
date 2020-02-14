@@ -14,7 +14,7 @@ const multer = require('multer');
 
 // Define the globals
 global.debugon=true;
-global.version="0.0.8";
+global.version="0.0.10";
 
 // Init database
 if (config.development) {
@@ -36,6 +36,7 @@ let whatsnew = require('./routes/whatsnew');
 let users = require('./routes/users');
 let gamesRouter = require('./routes/game');
 let docRouter = require('./routes/doc');
+let statsRouter = require('./routes/stats');
 
 var app = express();
 
@@ -97,6 +98,7 @@ app.use('/', whatsnew);
 app.use('/', users);
 app.use('/', gamesRouter);
 app.use('/', docRouter);
+app.use('/', statsRouter);
 
 
 // catch 404 and forward to error handler

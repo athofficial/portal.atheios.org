@@ -8,18 +8,21 @@ block content
     form(method='POST', action='/update')
       #form-group
         label Nickname:
-        input.form-control(name='displayname',type='text', value=user.displayname)
+        input#displayname.form-control(name='displayname',type='text', value=user.displayname)
         small#depositHelp.form-text.text-muted The nickname is the name being displayed in games or on leaderboards
       #form-group
         label Username:
-        input.form-control(name='name', type='text', value=user.username, disabled=true)
+        input#username.form-control(name='name', type='text', value=user.username, disabled=true)
       #form-group
         label Email:
-        input.form-control(name='email', type='text', value=user.email)
+        input#email.form-control(name='email', type='text', value=user.email)
       #form-group
         label Your ATH mainacount
-        input.form-control(name='depositaddr',type='text', placeholder="0x...", value=user.depositaddr)
-        <small id="depositHelp" class="form-text text-muted">This should be Your main account address, as we will send money to this one if You would decide to withdraw funds from Your bloxxchain ATH address.</small>
+        input#athaddr.form-control(name='athaddr',type='text', placeholder="0x...", value=user.athaddr, disabled)
+        <small id="depositHelp" class="form-text text-muted">This is Your transfer account You have received from us. Use this one as a destination address to fund Your games.</small>
+      #form-group
+        label Your current funding
+        input#athaddr.form-control(name='amount',type='text', value=amount, disabled)
         input.btn.btn-primary(type='submit',value='Submit')
         p
 

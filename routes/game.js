@@ -11,7 +11,7 @@ var mv = require('mv');
 
 
 
-const {MISC_makeid, MISC_maketoken} = require('../misc');
+const {MISC_ensureAuthenticated, MISC_validation, MISC_makeid, MISC_maketoken} = require('../misc');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 
 
 /* GET home page. */
-router.get('/addgame', ensureAuthenticated, function(req, res, next) {
+router.get('/addgame', MISC_ensureAuthenticated, function(req, res, next) {
     res.render('game_add_1', {
         title: 'Portal | Add game asset',
         version: version,
@@ -35,14 +35,14 @@ router.get('/addgame', ensureAuthenticated, function(req, res, next) {
 });
 
 /* GET delete page. */
-router.get('/deletegame', ensureAuthenticated, function(req, res, next) {
+router.get('/deletegame', MISC_ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
     logger.info("Query: %s",query);
 });
 
 
 /* GET edit page. */
-router.get('/editgame', ensureAuthenticated, function(req, res, next) {
+router.get('/editgame', MISC_ensureAuthenticated, function(req, res, next) {
 
     let query = req.query.id;
 
@@ -248,7 +248,7 @@ function buildPlayerOption(value) {
 return(text);
 }
 
-router.get('/currentgame', ensureAuthenticated, function(req, res, next) {
+router.get('/currentgame', MISC_ensureAuthenticated, function(req, res, next) {
     var sql = "SELECT * FROM gameasset WHERE userid="+req.user.id + " AND asset_ready=2";
     if (debugon)
         logger.info("SQL: %s",sql);
@@ -268,7 +268,7 @@ router.get('/currentgame', ensureAuthenticated, function(req, res, next) {
     });
 });
 
-router.get('/removegame', ensureAuthenticated, function(req, res, next) {
+router.get('/removegame', MISC_ensureAuthenticated, function(req, res, next) {
     res.render('game_remove', {
         title: 'Portal | Remove gaming assets',
         version: version,
@@ -276,7 +276,7 @@ router.get('/removegame', ensureAuthenticated, function(req, res, next) {
     });
 });
 
-router.get('/publishgame', ensureAuthenticated, function(req, res, next) {
+router.get('/publishgame', MISC_ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
 
     var vsql = "UPDATE gameasset SET asset_options=asset_options ^ b'00000001' WHERE id='" + query + "'";
@@ -294,15 +294,50 @@ router.get('/publishgame', ensureAuthenticated, function(req, res, next) {
     });
 });
 
-// Access Control
-function ensureAuthenticated(req, res, next){
-    if(req.isAuthenticated()){
-        return next();
-    } else {
-        req.flash('danger', 'Please login');
-        res.redirect('/login');
-    }
-}
+router.get('/statsgame', MISC_ensureAuthenticated, function(req, res, next) {
+    let query = req.query.id;
+
+    var vsql = "SELECT * FROM gameasset WHERE id='" + query + "'";
+    if (debugon)
+        logger.info("SQL: %s",vsql);
+    pool.query(vsql, function (error, rows, fields) {
+        if (error) {
+            if (debugon)
+                logger.error('Error: %s' + error);
+            throw error;
+        }
+        var vsql = "SELECT * FROM gameplay WHERE gameasset_id=" + rows[0].id;
+        if (debugon)
+            logger.info("SQL: %s",vsql);
+        pool.query(vsql, function (error, rows1, fields) {
+            if (error) {
+                if (debugon)
+                    logger.error('Error: %s' + error);
+                throw error;
+            }
+            var statsjson = [
+                {
+                    title: "Games played",
+                    description: "Number of games played",
+                    value: rows1.length
+                },
+                {
+                    title: "Games started",
+                    description: "This are the games started, ",
+                    value: 145
+                }
+            ];
+            // Display uploaded image for user validation
+            res.render('game_stats', {
+                gamename: rows[0].asset_name,
+                title: 'Game statistics',
+                statsitem: statsjson,
+                version: version
+            });
+        });
+    });
+});
+
 
 const imageFilter = function(req, file, cb) {
     // Accept images only
@@ -323,25 +358,8 @@ router.post('/game_add_1', [
     const gameurl = req.body.gameurl;
 
     // ToDo Check image size, we really would like to have 640x400
-    const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
-        // Build your resulting errors however you want! String, object, whatever - it works!
-        return `Error: ${msg}`;
-    };
-
-
-    var errors = validationResult(req).formatWith(errorFormatter);
-    if(!errors.isEmpty()){
-        var errorstr="";
-        for (i=0;i<errors.array().length;i++) {
-            errorstr+=errors.array()[i];
-            if (i<errors.array().length-1) {
-                errorstr+=", ";
-            }
-
-        }
-        req.flash('danger', errorstr);
+    if (!MISC_validation(req)) {
         res.redirect('/addgame');
-
     } else {
         // First we do some housekeeping and remove all older asset entries which are not yet op to stage 2
         // and more then an 10 min late
@@ -446,22 +464,7 @@ router.post('/game_add_3', [
     const asset_player5 = req.body.player5;
     const asset_options = 0;
 
-    const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
-        // Build your resulting errors however you want! String, object, whatever - it works!
-        return `Error: ${msg}`;
-    };
-
-    var errors = validationResult(req).formatWith(errorFormatter);
-    if(!errors.isEmpty()){
-        var errorstr="";
-        for (i=0;i<errors.array().length;i++) {
-            errorstr+=errors.array()[i];
-            if (i<errors.array().length-1) {
-                errorstr+=", ";
-            }
-
-        }
-        req.flash('danger', errorstr);
+    if (!MISC_validation(req)) {
         res.redirect('/game_add3');
     } else {
         var sum=Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
@@ -509,7 +512,17 @@ router.post('/game_add_3', [
 
 
 
-router.post('/game_edit', function(req, res) {
+router.post('/game_edit', [
+    check('gametoken', 'Something went wrong: No asset token').notEmpty(),
+    check('scheme', 'Something went wrong: No scheme').notEmpty(),
+    check('periode', 'Something went wrong: No periode').notEmpty(),
+    check('player1', 'Something went wrong: No player 1').notEmpty(),
+    check('player2', 'Something went wrong: No player 2').notEmpty(),
+    check('player3', 'Something went wrong: No player 3').notEmpty(),
+    check('player4', 'Something went wrong: No player 4').notEmpty(),
+    check('player5', 'Something went wrong: No player 5').notEmpty(),
+    check('gamedesc', 'Something went wrong: Missing game description').notEmpty()
+], function(req, res) {
     const asset_token = req.body.gametoken;
     const asset_scheme = req.body.scheme;
     const asset_periode = req.body.periode;
@@ -522,21 +535,9 @@ router.post('/game_edit', function(req, res) {
     const asset_url = req.body.gameurl;
     const asset_name = req.body.gamename;
 
-    req.checkBody('gametoken', 'Something went wrong: No asset token').notEmpty();
-    req.checkBody('scheme', 'Something went wrong: No scheme').notEmpty();
-    req.checkBody('periode', 'Something went wrong: No periode').notEmpty();
-    req.checkBody('player1', 'Something went wrong: No player 1').notEmpty();
-    req.checkBody('player2', 'Something went wrong: No player 2').notEmpty();
-    req.checkBody('player3', 'Something went wrong: No player 3').notEmpty();
-    req.checkBody('player4', 'Something went wrong: No player 4').notEmpty();
-    req.checkBody('player5', 'Something went wrong: No player 5').notEmpty();
-    req.checkBody('gamedesc', 'Something went wrong: Missing game description').notEmpty();
 
-    let errors = req.validationErrors();
-    if(errors){
-        res.render('/currentgame', {
-            errors:errors
-        });
+    if (!MISC_validation(req)) {
+        res.redirect('/editgame?id=2');
     } else {
         if(isNaN(asset_scheme) || isNaN(asset_periode)) {
            req.flash('danger', 'Please specify scheme and periode with the predefined values.');

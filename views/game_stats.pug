@@ -1,0 +1,16 @@
+extends layout
+
+block content
+    header.registerhead.d-flex
+        .container.align-bottom
+            h1.mb-1.text-secondary
+                = gamename
+                |  stats
+    .container
+        section.bg-warning.text-black
+            .container
+                each item in statsitem
+                    h2= item.title
+                    ul
+                        li= item.description
+                        li= item.value
