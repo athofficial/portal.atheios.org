@@ -8,6 +8,7 @@ const Mail=require('../mail');
 const multer = require('multer');
 const path = require('path');
 var mv = require('mv');
+const {athGetAddress, athGetBalance, athdoWithdraw} = require('../ath');
 
 
 
@@ -36,8 +37,32 @@ router.get('/addgame', MISC_ensureAuthenticated, function(req, res, next) {
 
 /* GET delete page. */
 router.get('/deletegame', MISC_ensureAuthenticated, function(req, res, next) {
-    let query = req.query.id;
-    logger.info("Query: %s",query);
+    let gameid = parseInt(req.query.id);
+    let userid = parseInt(req.user.id);
+
+    var sql = "SELECT * FROM gameasset WHERE id = " + pool.escape(gameid) + " AND userid = " + pool.escape(userid) + " AND asset_ready=2";
+    logger.info("SQL: %s",sql);
+    pool.query(sql, function (error, rows, fields) {
+        if (error) {
+            if (debugon)
+                logger.error('SQL failed %s', error);
+            throw error;
+        } else {
+            if (rows.length==1) {
+                res.render('game_remove', {
+                    title: 'Portal | Remove existing game asset',
+                    version: version,
+                    user: req.user,
+                    gamename: rows[0].asset_name,
+                    gametoken: rows[0].asset_token,
+                    gamesecret: rows[0].asset_secret
+                });
+            } else {
+                req.flash('info', 'Asset deletion not possible');
+                res.redirect('/currentgame');
+            }
+        }
+    });
 });
 
 
@@ -268,13 +293,6 @@ router.get('/currentgame', MISC_ensureAuthenticated, function(req, res, next) {
     });
 });
 
-router.get('/removegame', MISC_ensureAuthenticated, function(req, res, next) {
-    res.render('game_remove', {
-        title: 'Portal | Remove gaming assets',
-        version: version,
-        user: user
-    });
-});
 
 router.get('/publishgame', MISC_ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
@@ -372,15 +390,12 @@ router.post('/game_add_1', [
                     logger.error('Error: %s' + error);
                 throw error;
             } else {
-                // ToDo: Need to do a proper ath address resolution
-                var athaddr = "0xABC";
                 var gametoken = MISC_maketoken(5);
                 var gamesecret = MISC_makeid(50);
 
                 // Stage one
-                var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_athaddr, asset_token, asset_secret, asset_description, asset_url, asset_creation) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + athaddr + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "')";
-                if (debugon)
-                    logger.info("SQL: %s", vsql);
+                var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "')";
+                logger.info("SQL: %s", vsql);
                 pool.query(vsql, function (error, rows, fields) {
                     if (error) {
                         if (debugon)
@@ -421,26 +436,26 @@ router.post('/game_add_2', function(req, res) {
         const asset_token = req.body.asset_token;
 
         mv(req.file.path, 'public/uploads/' + req.file.filename, function (err) {
-            // handle the error
-            logger.error("Error: %s", err);
-        });
-        var vsql = "UPDATE gameasset SET asset_ready=asset_ready=1, asset_pic='" + 'uploads/' + req.file.filename + "' WHERE asset_token='" + asset_token + "'";
-        if (debugon)
-            logger.info("SQL: %s", vsql);
-        pool.query(vsql, function (error, rows, fields) {
-            if (error) {
-                if (debugon)
-                    logger.error('Error: %s' + error);
-            } else {
-                // Display uploaded image for user validation
-                res.render('game_add_3', {
-                    title: 'Portal | Step3 : Add game asset',
-                    version: version,
-                    asset_token: asset_token,
-                    user: req.user
-                });
+            var vsql = "UPDATE gameasset SET asset_ready=1, asset_pic='" + 'uploads/' + req.file.filename + "' WHERE asset_token='" + asset_token + "'";
+            if (debugon)
+                logger.info("SQL: %s", vsql);
+            pool.query(vsql, function (error, rows, fields) {
+                if (error) {
+                    if (debugon)
+                        logger.error('Error: %s',error);
+                    throw error;
+                } else {
+                    // Display uploaded image for user validation
+                    res.render('game_add_3', {
+                        title: 'Portal | Step3 : Add game asset',
+                        version: version,
+                        asset_token: asset_token,
+                        user: req.user
+                    });
 
-            }
+                }
+            });
+
         });
     });
 });
@@ -470,29 +485,42 @@ router.post('/game_add_3', [
         var sum=Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
         if (sum == 10) {
             logger.info("Update success");
-            var vsql = "UPDATE gameasset SET asset_ready=2, asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
-            if (debugon)
-                logger.info("SQL: %s", vsql);
-            pool.query(vsql, function (error, rows, fields) {
+            athGetAddress(function (error, athaddr) {
                 if (error) {
-                    if (debugon)
-                        logger.error('>>> Error: %s' + error);
-                    throw error;
+                    req.flash('danger', 'Can not access blockchain');
+                    res.render('game_add_3', {
+                        title: 'Portal | Step3 : Add game asset',
+                        version: version,
+                        asset_token: asset_token,
+                        user: req.user
+                    });
                 } else {
-                    var sql = "SELECT * FROM gameasset WHERE asset_token = '" + asset_token+"'";
-                    pool.query(sql, function (error, rows, fields) {
+                    var vsql = "UPDATE gameasset SET asset_ready=2, asset_athaddr='"+athaddr+"', asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
+                    if (debugon)
+                        logger.info("SQL: %s", vsql);
+                    pool.query(vsql, function (error, rows, fields) {
                         if (error) {
                             if (debugon)
                                 logger.error('>>> Error: %s' + error);
                             throw error;
                         } else {
-                            confmail = new Mail();
-                            confmail.sendMail(req.user.email, "Atheios Portal: An asset has been created: " + rows[0].asset_name, 'A game asset has been created. Gametoken: ' + asset_token);
-                            req.flash('info', 'Asset created');
-                            res.redirect('/currentgame');
+                            var sql = "SELECT * FROM gameasset WHERE asset_token = '" + asset_token + "'";
+                            pool.query(sql, function (error, rows, fields) {
+                                if (error) {
+                                    if (debugon)
+                                        logger.error('>>> Error: %s' + error);
+                                    throw error;
+                                } else {
+                                    confmail = new Mail();
+                                    confmail.sendMail(req.user.email, "Atheios Portal: An asset has been created: " + rows[0].asset_name, 'A game asset has been created. Gametoken: ' + asset_token);
+                                    req.flash('info', 'Asset created');
+                                    res.redirect('/currentgame');
+                                }
+                            });
                         }
                     });
                 }
+
             });
         } else {
             req.flash('danger', 'Check the player distribution, it should be 100%');
@@ -561,5 +589,42 @@ router.post('/game_edit', [
         }
     }
 });
+
+router.post('/remove_game', [
+    check('gamename', 'Something went wrong: No asset name').notEmpty(),
+    check('gametoken', 'Something went wrong: No asset token').notEmpty(),
+    check('gamesecret', 'Something went wrong: No secret').notEmpty()
+], function(req, res) {
+    const asset_name = req.body.gametoken;
+    const asset_token = req.body.gametoken;
+    const asset_secret = req.body.gamesecret;
+
+    if (!MISC_validation(req)) {
+        res.redirect('/currentgame');
+    } else {
+        var vsql = "UPDATE gameasset SET asset_ready='7' WHERE asset_token='" + asset_token +"' AND asset_secret='"+asset_secret+"'";
+        if (debugon)
+            logger.info("SQL: %s",vsql);
+        pool.query(vsql, function (error, rows, fields) {
+            if (error) {
+                if (debugon)
+                    logger.error('Error: %s' + error);
+            } else {
+                if (rows.affectedRows == 1) {
+                    confmail = new Mail();
+                    confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been delected: " + asset_name, 'Your game asset as been finally revoked.');
+                    req.flash('info', 'Asset revoked');
+                    res.redirect('/currentgame');
+                } else {
+                    req.flash('danger', 'Asset secret is not matching');
+                    res.redirect('/currentgame');
+                }
+            }
+        });
+
+    }
+});
+
+
 
 module.exports = router;
