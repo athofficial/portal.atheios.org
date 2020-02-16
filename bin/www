@@ -69,6 +69,10 @@ wss.on('connection', (ws, req) => {
   var urlarray = req.url.split('/');
   // urlarray[1] is 'ws'
   // urlarray[2] is gameid
+  // urlarray[3) is gameid on secure connection
+  if (urlarray[2]==="") {
+    urlarray[2]=urlarray[3];
+  }
   if (urlarray[1]==="ws") {
     // initial access which we redirect to another server
     logger.info("Initial access.");
@@ -76,15 +80,16 @@ wss.on('connection', (ws, req) => {
       var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
     }
     else {
-      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://portal.atheios.org:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://portal.atheios.org/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
     };
-
+    logger.info("Return msg on connection: %s", jstring);
     ws.send(jstring);
   } else {
     if (urlarray[1] === "fs") {
       // Redirected access
-      logger.info("Redirected access.");
+      logger.info("Redirected access with game id %s",urlarray[2]);
       var sql = "SELECT * FROM gameasset WHERE asset_token=" + pool.escape(urlarray[2]) + " AND asset_ready=2";
+      logger.info("SQL: %s", sql);
       pool.query(sql, function (error, rows, fields) {
         if (error) {
           logger.error("%s", error);
@@ -246,6 +251,7 @@ function func_AuthenticationRequest(ws, randstr, rows, result) {
   logger.info("Found AuthenticationRequest\n%s", result);
   var username = result['username'];
   var userpass = result['userpass'];
+  var apikey = result['apikey'];
 
   var sql = "SELECT * FROM user WHERE username LIKE " + pool.escape(username);
   if (debugon)
@@ -262,31 +268,50 @@ function func_AuthenticationRequest(ws, randstr, rows, result) {
           if (debugon)
             logger.info("User exists");
           var randstr = MISC_makeid(24);
-
-          jstring = "{\n" +
-              "  \"@class\" : \".AuthenticationResponse\",\n" +
-              "  \"authToken\" : \"" + randstr + "\",\n" +
-              "  \"displayName\" : \"" + rows[0].displayname + "\",\n" +
-              "  \"newPlayer\" : false,\n" +
-              "  \"userId\" : \"" + rows[0].id + "\",\n" +
-              "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
-              "}";
-          ws.send(jstring);
-          // Update the entry with the authtoken
-          var vsql = "UPDATE user SET authtoken=" + pool.escape(randstr) + " WHERE id=" + rows[0].id;
-          pool.query(vsql, function (error, rows1, fields) {
+          var sql = "SELECT * FROM gameasset WHERE asset_token LIKE " + pool.escape(apikey);
+          logger.info("SQL: %s", sql);
+          pool.query(sql, function (error, rows1, fields) {
             if (error) {
-              if (debugon)
-                logger.error('Error: %s', error);
-              throw error;
+              logger.error("%s", error);
+              throw(error);
+            } else {
+              if (rows1.length == 1) {
+                jstring = "{\n" +
+                    "  \"@class\" : \".AuthenticationResponse\",\n" +
+                    "  \"authToken\" : \"" + randstr + "\",\n" +
+                    "  \"displayName\" : \"" + rows[0].displayname + "\",\n" +
+                    "  \"newPlayer\" : false,\n" +
+                    "  \"userId\" : \"" + rows[0].id + "\",\n" +
+                    "  \"gameId\" : \"" + rows1[0].id + "\",\n" +
+                    "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+                    "}";
+                ws.send(jstring);
+                // Update the entry with the authtoken
+                var vsql = "UPDATE user SET authtoken=" + pool.escape(randstr) + " WHERE id=" + rows[0].id;
+                pool.query(vsql, function (error, rows1, fields) {
+                  if (error) {
+                    if (debugon)
+                      logger.error('Error: %s', error);
+                    throw error;
+                  }
+                });
+              } else {
+                jstring = "{\n" +
+                    "  \"@class\" : \".AuthenticationResponse\",\n" +
+                    "  \"authToken\" : \"" + randstr + "\",\n" +
+                    "  \"error\":{\"details\":\"API key not matching.\"}," +
+                    "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+                    "}";
+                ws.send(jstring);
+              }
             }
           });
 
         } else {
-          logger.warn("User doesn't exist");
+          logger.warn("User / password do not match");
           jstring = "{\n" +
               "  \"@class\":\".AuthenticationResponse\"," +
-              "  \"error\":{\"DETAILS\":\"UNRECOGNISED\"}," +
+              "  \"error\":{\"details\":\"User password unrecognized\"}," +
               "  \"newPlayer\":false," +
               "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
               "}";
@@ -344,17 +369,13 @@ function func_SetWageRequest(ws, randstr, rows, result) {
       // OK we identified the connection
       logger.info("Authenticated");
       var wage = parseInt(result['wage']);
-      var amount = rows[0].athamount - parseInt(pool.escape(result['wage']));
+      var amount = rows[0].athamount - wage;
       if (!(amount > 0)) {
         // Wage amount is not correct
         jstring = "{\n" +
             "  \"@class\" : \".SetWageResponse\",\n" +
             "  \"authToken\" : \"" + result['authToken'] + "\",\n" +
-            "  \"value\" : " + rows[0].athamount + ",\n" +
-            "  \"playid\" : \"0\",\n" +
-            "  \"currency\" : \"ATH\",\n" +
-            "  \"status\" : \"NOK\",\n" +
-            "  \"reason\" : \"You do not have so many coins available.\",\n" +
+            "  \"error\":{\"details\":\"Error: Not enough coins available\"}," +
             "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
             "}";
         ws.send(jstring);
@@ -409,12 +430,7 @@ function func_SetWageRequest(ws, randstr, rows, result) {
             jstring = "{\n" +
                 "  \"@class\" : \".SetWageResponse\",\n" +
                 "  \"authToken\" : \"" + result['authToken'] + "\",\n" +
-                "  \"value\" : " + rows[0].athamount + ",\n" +
-                "  \"playid\" : \"0\",\n" +
-                "  \"currency\" : \"ATH\",\n" +
-                "  \"gameid\" : \"undefined\",\n" +
-                "  \"status\" : \"NOK\",\n" +
-                "  \"reason\" : \"Game doesn't exist anymore: \""+ rows1.length +",\n" +
+                "  \"error\":{\"details\":\"Game doesn't exist\"}," +
                 "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
                 "}";
             ws.send(jstring);
@@ -437,7 +453,7 @@ function func_FinishGameRequest(ws, randstr, rows, result) {
   var authtoken=result['authToken'];
   var score=parseInt(result['scoreValue']);
 
-  var vsql = "UPDATE gameplay SET gameplay_score=" + pool.escape(score) + ", gameplay_end_date='" + pool.mysqlNow() + "', gameplay_options=2 WHERE id=" + pool.escape(playid) + " AND authtoken LIKE '" + pool.escape(authtoken)+ "'";
+  var vsql = "UPDATE gameplay SET gameplay_score=" + pool.escape(score) + ", gameplay_end_date='" + pool.mysqlNow() + "', gameplay_options=2 WHERE id=" + pool.escape(playid) + " AND authtoken LIKE " + pool.escape(authtoken);
   logger.info("SQL: %s", vsql);
   pool.query(vsql, function (error, rows2, fields) {
     if (error) {

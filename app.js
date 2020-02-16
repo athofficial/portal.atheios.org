@@ -14,7 +14,7 @@ const multer = require('multer');
 
 // Define the globals
 global.debugon=true;
-global.version="0.0.10";
+global.version="0.1.0";
 
 // Init database
 if (config.development) {

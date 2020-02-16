@@ -223,7 +223,7 @@ router.post('/updatepassword', [
             logger.error("BCRYPT error: %s",err);
           }
           // write to database
-          var vsql = "UPDATE user SET password='" + hash + "' WHERE id=" + req.user.id;
+          var vsql = "UPDATE user SET password='" + hash + "' WHERE id=" + parseInt(pool.escape(req.user.id));
           pool.query(vsql, function (error, rows, fields) {
             if (error) {
               if (debugon)
@@ -256,7 +256,7 @@ router.post('/login', [
   if (!MISC_validation(req)) {
     res.redirect('/login');
   } else {
-    var sql = "SELECT * FROM user WHERE username =" + (req.body.username);
+    var sql = "SELECT * FROM user WHERE username =" + pool.escape(req.body.username);
     logger.info("SQL: %s", sql);
     pool.query(sql, function (error, rows, fields) {
       if (error) {

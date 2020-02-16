@@ -4,6 +4,25 @@ block content
   h3 Remove game asset
   .container
   if user
+    form(method='POST', action='/remove_game')
+      .container
+        #form-group
+        label Game name:
+        input.form-control(name='gamename', type='text', value=gamename, readonly=true)
+        small#depositHelp.form-text.text-muted This is Your game name
+        br
+        #form-group
+        label Game token:
+        input.form-control(name='gametoken', type='text', value=gametoken, readonly=true)
+        small#depositHelp.form-text.text-muted This is Your game token
+        br
+        #form-group
+        label Confirm the removal by entering Your game secret:
+        input.form-control(name='gamesecret', type='text', value=gamesecret)
+        br
+      input.btn.btn-primary(type='submit',value='Finally remove')
+      small#depositHelp.form-text.text-muted NOTE! When submitting You will lose access to Your game asset, it will be unpublished and potential funds stored on the game specific ATH address will be invalitated.
+
   else
     strong Please make sure You are logged in.
 
