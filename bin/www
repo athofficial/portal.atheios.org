@@ -77,7 +77,7 @@ wss.on('connection', (ws, req) => {
     // initial access which we redirect to another server
     logger.info("Initial access.");
     if (config.development) {
-      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
+      var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"ws://localhost:3003/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
     }
     else {
       var jstring="{\"@class\":\".AuthenticatedConnectRequest\", \"connectUrl\":\"wss://portal.atheios.org/fs/"+ urlarray[2] +"\", \"requestId\":\"0\"}";
@@ -253,7 +253,7 @@ function func_AuthenticationRequest(ws, randstr, rows, result) {
   var userpass = result['userpass'];
   var apikey = result['apikey'];
 
-  var sql = "SELECT * FROM user WHERE username LIKE " + pool.escape(username);
+  var sql = "SELECT * FROM user WHERE username = " + pool.escape(username);
   if (debugon)
     logger.info(sql);
   pool.query(sql, function (error, rows, fields) {
@@ -261,67 +261,82 @@ function func_AuthenticationRequest(ws, randstr, rows, result) {
       logger.error("%s", error);
       throw(error);
     } else {
-      bcrypt.compare(userpass, rows[0].password).then(function (res) {
-        // res == true
-        if (res == true) {
+      if (rows.length == 1) {
+        bcrypt.compare(userpass, rows[0].password).then(function (res) {
+          // res == true
+          if (res == true) {
 
-          if (debugon)
-            logger.info("User exists");
-          var randstr = MISC_makeid(24);
-          var sql = "SELECT * FROM gameasset WHERE asset_token LIKE " + pool.escape(apikey);
-          logger.info("SQL: %s", sql);
-          pool.query(sql, function (error, rows1, fields) {
-            if (error) {
-              logger.error("%s", error);
-              throw(error);
-            } else {
-              if (rows1.length == 1) {
-                jstring = "{\n" +
-                    "  \"@class\" : \".AuthenticationResponse\",\n" +
-                    "  \"authToken\" : \"" + randstr + "\",\n" +
-                    "  \"displayName\" : \"" + rows[0].displayname + "\",\n" +
-                    "  \"newPlayer\" : false,\n" +
-                    "  \"userId\" : \"" + rows[0].id + "\",\n" +
-                    "  \"gameId\" : \"" + rows1[0].id + "\",\n" +
-                    "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
-                    "}";
-                ws.send(jstring);
-                // Update the entry with the authtoken
-                var vsql = "UPDATE user SET authtoken=" + pool.escape(randstr) + " WHERE id=" + rows[0].id;
-                pool.query(vsql, function (error, rows1, fields) {
-                  if (error) {
-                    if (debugon)
-                      logger.error('Error: %s', error);
-                    throw error;
-                  }
-                });
+            if (debugon)
+              logger.info("User exists");
+            var randstr = MISC_makeid(24);
+            var sql = "SELECT * FROM gameasset WHERE asset_token LIKE " + pool.escape(apikey);
+            logger.info("SQL: %s", sql);
+            pool.query(sql, function (error, rows1, fields) {
+              if (error) {
+                logger.error("%s", error);
+                throw(error);
               } else {
-                jstring = "{\n" +
-                    "  \"@class\" : \".AuthenticationResponse\",\n" +
-                    "  \"authToken\" : \"" + randstr + "\",\n" +
-                    "  \"error\":{\"details\":\"API key not matching.\"}," +
-                    "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
-                    "}";
-                ws.send(jstring);
+                if (rows1.length == 1) {
+                  jstring = "{\n" +
+                      "  \"@class\" : \".AuthenticationResponse\",\n" +
+                      "  \"authToken\" : \"" + randstr + "\",\n" +
+                      "  \"displayName\" : \"" + rows[0].displayname + "\",\n" +
+                      "  \"newPlayer\" : false,\n" +
+                      "  \"userId\" : \"" + rows[0].id + "\",\n" +
+                      "  \"gameId\" : \"" + rows1[0].id + "\",\n" +
+                      "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+                      "}";
+                  ws.send(jstring);
+                  // Update the entry with the authtoken
+                  var vsql = "UPDATE user SET authtoken=" + pool.escape(randstr) + " WHERE id=" + rows[0].id;
+                  pool.query(vsql, function (error, rows1, fields) {
+                    if (error) {
+                      if (debugon)
+                        logger.error('Error: %s', error);
+                      throw error;
+                    }
+                  });
+                } else {
+                  jstring = "{\n" +
+                      "  \"@class\" : \".AuthenticationResponse\",\n" +
+                      "  \"authToken\" : \"" + randstr + "\",\n" +
+                      "  \"error\":{\"details\":\"API key not matching.\"}," +
+                      "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+                      "}";
+                  ws.send(jstring);
+                }
               }
-            }
-          });
+            });
 
-        } else {
-          logger.warn("User / password do not match");
-          jstring = "{\n" +
-              "  \"@class\":\".AuthenticationResponse\"," +
-              "  \"error\":{\"details\":\"User password unrecognized\"}," +
-              "  \"newPlayer\":false," +
-              "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
-              "}";
-          ws.send(jstring);
+          } else {
+            logger.warn("User / password do not match");
+            jstring = "{\n" +
+                "  \"@class\":\".AuthenticationResponse\"," +
+                "  \"error\":{\"details\":\"User password unrecognized\"}," +
+                "  \"newPlayer\":false," +
+                "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+                "}";
+            ws.send(jstring);
 
-          // There is a problem
-          // Deny authentication
-        }
+            // There is a problem
+            // Deny authentication
+          }
+        });
+      } else {
+        logger.warn("User name not found");
+        jstring = "{\n" +
+            "  \"@class\":\".AuthenticationResponse\"," +
+            "  \"error\":{\"details\":\"User name unrecognized\"}," +
+            "  \"newPlayer\":false," +
+            "  \"requestId\" : \"" + result['requestId'] + "\"\n" +
+            "}";
+        ws.send(jstring);
 
-      });
+        // There is a problem
+        // Deny authentication
+      }
+
+
     }
   });
 }
@@ -453,6 +468,8 @@ function func_FinishGameRequest(ws, randstr, rows, result) {
   var authtoken=result['authToken'];
   var score=parseInt(result['scoreValue']);
 
+  // gameplay option == 2 means that the game is valid but not yet paid out
+  // bit 3 will be set if game is gone through resolution
   var vsql = "UPDATE gameplay SET gameplay_score=" + pool.escape(score) + ", gameplay_end_date='" + pool.mysqlNow() + "', gameplay_options=2 WHERE id=" + pool.escape(playid) + " AND authtoken LIKE " + pool.escape(authtoken);
   logger.info("SQL: %s", vsql);
   pool.query(vsql, function (error, rows2, fields) {
@@ -513,57 +530,66 @@ function func_GameLadderRequest(ws, randstr, rows, result) {
         }
 
         var i,j;
+        var inplay=0;
         var nrofgames = rows.length;
         var ladder = "";
         // Now we search for the latest game
-        for (j = 0; j < rows.length; j++) {
-          logger.info("j: %s, Rows2: %s, rows: %s",j,rows2[0].id, rows[j].id);
-          if (rows2[0].id===rows[j].id)
-            break;
-        }
-
-        ladder += "{\n" +
-          "  \"position\" : \"" + (j+1) + "\",\n" +
-          "  \"score\" : \"" + rows[j].gameplay_score + "\",\n" +
-          "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
-          "  \"date\" : \"" + rows[j].date + "\"\n" +
-          "},";
-
-        if (nrofgames < 5) {
-          for (i = 0; i < rows.length; i++) {
-            ladder += "{\n" +
-                "  \"position\" : \"" + (i + 1) + "\",\n" +
-                "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
-                "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
-                "  \"date\" : \"" + rows[i].date + "\"\n" +
-                "},";
+        if (nrofgames>0) {
+          for (j = 0; j < rows.length; j++) {
+            inplay+=rows[j].amount;
           }
-        } else {
-          for (i = 0; i < 5; i++) {
-            ladder += "{\n" +
-                "  \"position\" : \"" + (i+1) + "\",\n" +
-                "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
-                "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
-                "  \"date\" : \"" + rows[i].date + "\"\n" +
-                "},";
+          for (j = 0; j < rows.length; j++) {
+            logger.info("j: %s, Rows2: %s, rows: %s", j, rows2[0].id, rows[j].id);
+            if (rows2[0].id === rows[j].id)
+              break;
           }
-          for (i = j; i < rows.length; i++) {
-            if (rows[i].userid == result['userId']) {
+
+          ladder += "{\n" +
+              "  \"position\" : \"" + (j + 1) + "\",\n" +
+              "  \"score\" : \"" + rows[j].gameplay_score + "\",\n" +
+              "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+              "  \"date\" : \"" + rows[j].date + "\"\n" +
+              "},";
+
+          if (nrofgames < 5) {
+            for (i = 0; i < rows.length; i++) {
               ladder += "{\n" +
-                  "  \"position\" : \"" + (i+1) + "\",\n" +
+                  "  \"position\" : \"" + (i + 1) + "\",\n" +
                   "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
                   "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
                   "  \"date\" : \"" + rows[i].date + "\"\n" +
                   "},";
             }
+          } else {
+            for (i = 0; i < 5; i++) {
+              ladder += "{\n" +
+                  "  \"position\" : \"" + (i + 1) + "\",\n" +
+                  "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
+                  "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+                  "  \"date\" : \"" + rows[i].date + "\"\n" +
+                  "},";
+            }
+            for (i = j; i < rows.length; i++) {
+              if (rows[i].userid == result['userId']) {
+                ladder += "{\n" +
+                    "  \"position\" : \"" + (i + 1) + "\",\n" +
+                    "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
+                    "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+                    "  \"date\" : \"" + rows[i].date + "\"\n" +
+                    "},";
+              }
+            }
           }
+          ladder = ladder.slice(0, -1);
+        } else {
+          ladder="";
         }
-        ladder = ladder.slice(0, -1);
         jstring = "{\n" +
             "  \"@class\" : \".GameLadderResponse\",\n" +
             "  \"authToken\" : \"" + result['authToken'] + "\",\n" +
             "  \"requestId\" : \"" + result['requestId'] + "\",\n" +
             "  \"totalGames\" : " + nrofgames + ",\n" +
+            "  \"inPlay\" : " + inplay + ",\n" +
             "  \"ladder\" : [\n" + ladder + "]\n" +
             "}";
         ws.send(jstring);

@@ -5,16 +5,20 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const morgan = require('morgan');
+var logger = require("./logger");
+
 const bodyParser = require('body-parser');
 const flash = require('connect-flash');
 const session = require('express-session');
 const passport = require('passport');
 const multer = require('multer');
+const Mail=require('./mail');
 
 // Define the globals
 global.debugon=true;
-global.version="0.1.0";
+global.version="0.1.1";
+
 
 // Init database
 if (config.development) {
@@ -86,7 +90,7 @@ app.get('*', function(req, res, next){
 });
 
 
-app.use(logger('dev'));
+app.use(morgan('dev'));
 app.use(express.json());
 app.set('json spaces', 2)
 app.use(express.urlencoded({ extended: false }));
@@ -116,6 +120,342 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+function gameResolution() {
+  var i,j;
+  var gameresolution;
+
+  // Check all active gameassets
+  var sql = "SELECT *,TIMESTAMPDIFF(SECOND, asset_resolution, now()) AS secs FROM gameasset WHERE asset_ready=2";
+  logger.info("SQL: %s", sql);
+  pool.query(sql, async (error, rows, fields) => {
+    if (error) {
+      logger.error("%s", error);
+      throw(error);
+    } else {
+      // For all active game assets
+      for (i = 0; i < rows.length; i++) {
+        // Time to trigger payment
+        logger.info("Secs: %s", rows[i].secs);
+        if (((parseInt(rows[i].asset_periode) * 3600) < rows[i].secs)) {
+          var devpercent=rows[i].asset_scheme;
+
+          logger.info("Game resolution: %s", rows[i].asset_name);
+          // Find the top gameplays for the game asset which are not yet resolved (gameplay_option=2)
+          var sql = "SELECT * FROM gameplay WHERE gameplay_options=2 AND gameasset_id=" + rows[i].id + " ORDER BY gameplay_score DESC";
+          logger.info("SQL: %s", sql);
+          await pool.query(sql, async (error, rows1, fields) => {
+            if (error) {
+              if (debugon)
+                logger.error('Error: %s', error);
+              throw error;
+            }
+            if (rows1.length>0) {
+              // Now we have
+              // rows: list of active game asset data
+              // rows1: list of played games for this asset
+              var payout = 0;
+              for (j = 0; j < rows1.length; j++) {
+                payout += rows1[j].amount;
+              }
+              logger.info("Payout: %i", payout);
+              var gameramount=Math.round(10*payout*(1.0-devpercent))/10;
+              var player1amount=Math.round((payout-gameramount)*rows[i].asset_player1)/10;
+              var player2amount=Math.round((payout-gameramount)*rows[i].asset_player2)/10;
+              var player3amount=Math.round((payout-gameramount)*rows[i].asset_player3)/10;
+              var player4amount=Math.round((payout-gameramount)*rows[i].asset_player4)/10;
+              var player5amount=Math.round((payout-gameramount)*rows[i].asset_player5)/10;
+              logger.info("Payout to gamer: %s", gameramount);
+              logger.info("Payout to player1: %s", player1amount);
+              logger.info("Payout to player2: %s", player2amount);
+              logger.info("Payout to player3: %s", player3amount);
+              logger.info("Payout to player4: %s", player4amount);
+              logger.info("Payout to player5: %s", player5amount);
+              if (true) {
+                logger.info("Game resolution");
+                logger.info("Gamer award");
+                var sql = "UPDATE user SET athamount=athamount+"+gameramount+" WHERE id="+rows[i].userid;
+                logger.info("SQL: %s", sql);
+                await pool.query(sql, async (error, rows2, fields) => {
+                  if (error) {
+                    if (debugon)
+                      logger.error('Error: %s', error);
+                    throw error;
+                  }
+                  var sql = "SELECT * FROM user WHERE id="+rows[i].userid;
+                  logger.info("SQL: %s", sql);
+                  pool.query(sql, async (error, rows2, fields) => {
+                    if (error) {
+                      if (debugon)
+                        logger.error('Error: %s', error);
+                      throw error;
+                    }
+                    logger.info("Users with Userid %s",rows2.length);
+                    if (rows2.length>0) {
+                      var confmail = new Mail();
+                      confmail.sendMail(rows2[0].email, "Atheios game developer reward for " + rows[i].asset_name , 'You have received ' + gameramount + 'ATH for the game ' + rows[i].asset_name + '\n.');
+                    }
+                  });
+                  var totalamount;
+                  logger.info("played games: %s", rows1.length);
+                  switch (rows1.length) {
+                    case 1:
+                      totalamount=player1amount+player2amount+player3amount+player4amount+player5amount;
+                      logger.info("User award %i", rows1.length);
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[0].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[0].userid, rows[i].asset_name, totalamount,1);
+                      break;
+                    case 2:
+                      totalamount=player1amount+(player3amount+player4amount+player5amount)/2;
+                      logger.info("User award %i", rows1.length);
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[0].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[0].userid, rows[i].asset_name, totalamount,1);
+                      totalamount=player2amount+(player3amount+player4amount+player5amount)/2;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[1].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[1].userid, rows[i].asset_name, totalamount,2);
+                      break;
+                    case 3:
+                      totalamount=player1amount+(player4amount+player5amount)/2;
+                      logger.info("User award %i", rows1.length);
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[0].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[0].userid, rows[i].asset_name, totalamount,1);
+
+                      totalamount=player2amount+(player4amount+player5amount)/2;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[1].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      totalamount=player3amount+(player4amount+player5amount)/2;
+                      sendUserMail(rows1[1].userid, rows[i].asset_name, totalamount,2);
+
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[2].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[2].userid, rows[i].asset_name, totalamount,3);
+
+                      break;
+                    case 4:
+                      totalamount=player1amount+(player5amount)/2;
+                      logger.info("User award %i", rows1.length);
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[0].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[0].userid, rows[i].asset_name, totalamount,1);
+
+                      totalamount=player2amount+(player5amount)/2;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[1].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[1].userid, rows[i].asset_name, totalamount,2);
+
+                      totalamount=player3amount+(player5amount)/2;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[2].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[2].userid, rows[i].asset_name, totalamount,3);
+
+                      totalamount=player4amount+(player5amount)/2;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[3].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[3].userid, rows[i].asset_name, totalamount,4);
+
+                      break;
+                    default:
+                    case 5:
+                      totalamount=player1amount;
+                      logger.info("User award %i", rows1.length);
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[0].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[0].userid, rows[i].asset_name, totalamount,1);
+
+                      totalamount=player2amount;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[1].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[1].userid, rows[i].asset_name, totalamount,2);
+
+                      totalamount=player3amount;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[2].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[2].userid, rows[i].asset_name, totalamount,3);
+
+                      totalamount=player4amount;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[3].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[3].userid, rows[i].asset_name, totalamount,4);
+
+                      totalamount=player5amount;
+                      var sql = "UPDATE user SET athamount=athamount+"+totalamount+" WHERE id="+rows1[4].userid;
+                      logger.info("SQL: %s", sql);
+                      pool.query(sql, async (error, rows2, fields) => {
+                        if (error) {
+                          if (debugon)
+                            logger.error('Error: %s', error);
+                          throw error;
+                        }
+                      });
+                      sendUserMail(rows1[4].userid, rows[i].asset_name, totalamount,5);
+
+                      break;
+
+                  }
+                  // Mark all gameplays for the game as paid, they will not come up anymore
+                  var sql = "UPDATE gameplay SET gameplay_options=gameplay_options||4 WHERE gameplay_options=2 AND gameasset_id=" + rows[i].id;
+                  logger.info("SQL: %s", sql);
+                  await pool.query(sql, async (error, rows2, fields) => {
+                    if (error) {
+                      if (debugon)
+                        logger.error('Error: %s', error);
+                      throw error;
+                    }
+                    // Now set any new parameters for the next game and make the current time as game initiation time
+                    var sql = "UPDATE gameasset SET asset_resolution='" + pool.mysqlNow() + "' WHERE id=" + rows[i].id;
+                    logger.info("SQL: %s", sql);
+                    pool.query(sql, async (error, rows2, fields) => {
+                      if (error) {
+                        if (debugon)
+                          logger.error('Error: %s', error);
+                        throw error;
+                      }
+                    });
+
+                  });
+
+
+                });
+
+
+
+              }
+            }
+          });
+
+        }
+      }
+    }
+  });
+}
+
+function sendUserMail(userid, asset_name, amount, position) {
+  var sql = "SELECT * FROM user WHERE id="+userid;
+  logger.info("SQL: %s", sql);
+  pool.query(sql, async (error, rows2, fields) => {
+    if (error) {
+      if (debugon)
+        logger.error('Error: %s', error);
+      throw error;
+    }
+    if (rows2.length>0) {
+      var confmail = new Mail();
+      confmail.sendMail(rows2[0].email, "You won! Reward for " + asset_name , 'Congratulations! You have been on the ' + position + '. place and qualify for a win. You have received ' + amount + 'ATH for the game ' + asset_name + '.');
+    }
+  });
+}
+
+// Here we check if we shall roll over games
+// Initialize long heartbeat every minute
+let longIntervalId;
+
+longIntervalId=setInterval(
+    () => gameResolution(),
+    60000
+);
+
 
 
 module.exports = app;

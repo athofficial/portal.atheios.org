@@ -40,16 +40,14 @@ class Database {
             ('00' + date.getUTCSeconds()).slice(-2);
         return(date);
     }
-    query( sql, arg) {
-        this.connection.query(sql, arg, (error,rows) => {
-            if (error) {
-                if (debugon)
-                    console.log('DEBUG >>> ', error);
-                cb(error, null);
-            } else {
-                cb(null, rows);
-            }
-        });
+    query( sql, args ) {
+        return new Promise( ( resolve, reject ) => {
+            this.connection.query( sql, args, ( err, rows ) => {
+                if ( err )
+                    return reject( err );
+                resolve( rows );
+            } );
+        } );
     }
     escape(arg) {
         return(this.connection.escape(arg));
