@@ -166,45 +166,6 @@ router.get('/logout', MISC_ensureAuthenticated, function(req, res){
 // ******************************************************************************************************************
 // ******************************************************************************************************************
 // Register Proccess
-router.post('/preferences', function(req, res){
-  var option=0;
-
-  if (req.body.keys==="arrow") {
-    option|=2;
-  }
-  else {
-    option&=253;
-  }
-
-  if (req.body.theme==="dark") {
-    option|=1;
-  }
-  else {
-    option&=254;
-  }
-  if (req.user) {
-    var vsql = "UPDATE user SET options="+option+" WHERE id=" + req.user.id;
-    logger.info("SQL: %s", vsql);
-    pool.query(vsql, function (error, rows, fields) {
-      if (error) {
-        if (debugon)
-          logger.error('Error: %s' + error);
-        throw error;
-      }
-    });
-    req.flash('success', 'Account is updated');
-    res.redirect('/account');
-  }
-  else {
-    req.flash('success', 'User logged out');
-    res.redirect('/login');
-
-  }
-});
-
-
-
-// Register Proccess
 router.post('/updatepassword', [
       check('password').notEmpty().withMessage("Password cannot be empty"),
       check('password2').notEmpty().withMessage("Password cannot be empty")
@@ -364,17 +325,15 @@ router.post('/resendusername', [
 // Register Proccess
 router.post('/resettedpassword', [
     check('password').notEmpty(),
-    check('password2').notEmpty
+    check('password2').notEmpty()
 ],function(req, res) {
   const password = req.body.password;
   const password2 = req.body.password2;
 
-  if (!MISC_validation(req)) {
-    res.redirect('/login');
-  } else {
-
+  if (password === password2) {
     // Check if resetcode is the one we sent
-    var sql = "SELECT * FROM user WHERE reset = " + pool.escape(req.body.resetcode);
+    var sql = "SELECT * FROM user WHERE reset =" + pool.escape(req.body.resetcode);
+    logger.info("SQL: %s", sql);
     pool.query(sql, function (error, rows, fields) {
       if (error) {
         if (debugon)
@@ -385,25 +344,34 @@ router.post('/resettedpassword', [
         bcrypt.genSalt(10, function (err, salt) {
           bcrypt.hash(password, salt, function (err, hash) {
             if (err) {
-              logger.error("BCRyPT error: %s",err);
+              logger.error("BCRyPT error: %s", err);
             }
             // write to database
             var vsql = "UPDATE user SET password='" + hash + "' WHERE id=" + rows[0].id;
+            logger.info("SQL: %s", vsql);
             pool.query(vsql, function (error, rows, fields) {
               if (error) {
                 if (debugon)
                   logger.error('Error: %s', error);
                 throw error;
               }
+              req.flash('success', 'Account update');
+              res.redirect('/account');
+
             });
-            req.flash('success', 'Account update');
-            res.redirect('/account');
           });
         });
+      } else {
+        req.flash(danger, 'Reset code is not matching');
+        res.redirect('/resetpassword');
       }
     });
+  } else {
+    req.flash(danger, 'Passwords are not alike! Please retype.');
+    res.redirect('/resetpassword');
   }
 });
+
 
 // Register Proccess
 router.post('/register', [

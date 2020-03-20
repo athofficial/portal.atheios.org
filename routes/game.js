@@ -381,7 +381,7 @@ router.post('/game_add_1', [
     } else {
         // First we do some housekeeping and remove all older asset entries which are not yet op to stage 2
         // and more then an 10 min late
-        var vsql = "DELETE FROM gameasset WHERE asset_creation < (NOW() - INTERVAL 10 MINUTE) AND asset_ready < 2";
+        var vsql = "DELETE FROM gameasset WHERE asset_creation < (NOW() - INTERVAL 180 MINUTE) AND asset_ready < 2";
         if (debugon)
             logger.info("SQL: %s",vsql);
         pool.query(vsql, function (error, rows, fields) {
@@ -394,7 +394,7 @@ router.post('/game_add_1', [
                 var gamesecret = MISC_makeid(50);
 
                 // Stage one
-                var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "')";
+                var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation, asset_resolution) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "', '" + pool.mysqlNow() + "')";
                 logger.info("SQL: %s", vsql);
                 pool.query(vsql, function (error, rows, fields) {
                     if (error) {
@@ -434,8 +434,12 @@ router.post('/game_add_2', function(req, res) {
             return res.send(err);
         }
         const asset_token = req.body.asset_token;
-
         mv(req.file.path, 'public/uploads/' + req.file.filename, function (err) {
+            if (err) {
+                if (debugon)
+                    logger.error('Error: %s',err);
+                throw err;
+            }
             var vsql = "UPDATE gameasset SET asset_ready=1, asset_pic='" + 'uploads/' + req.file.filename + "' WHERE asset_token='" + asset_token + "'";
             if (debugon)
                 logger.info("SQL: %s", vsql);
@@ -445,6 +449,7 @@ router.post('/game_add_2', function(req, res) {
                         logger.error('Error: %s',error);
                     throw error;
                 } else {
+                    logger.info("Next step");
                     // Display uploaded image for user validation
                     res.render('game_add_3', {
                         title: 'Portal | Step3 : Add game asset',

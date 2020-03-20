@@ -133,6 +133,7 @@ function gameResolution() {
       logger.error("%s", error);
       throw(error);
     } else {
+      logger.info("Games active: %s", rows.length);
       // For all active game assets
       for (i = 0; i < rows.length; i++) {
         // Time to trigger payment
@@ -426,6 +427,7 @@ function gameResolution() {
           });
 
         }
+        logger.info("Check %s",i);
       }
     }
   });

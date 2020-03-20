@@ -14,8 +14,8 @@ const filename = path.join(process.cwd()+'/Logs/', 'created-logfile.log');
 //
 // Remove the file, ignoring any errors
 //
-try { fs.unlinkSync(filename); }
-catch (ex) { }
+// try { fs.unlinkSync(filename); }
+// catch (ex) { }
 
 var logger = require("../logger");
 logger.info("Logging initiated");
@@ -87,7 +87,8 @@ wss.on('connection', (ws, req) => {
   } else {
     if (urlarray[1] === "fs") {
       // Redirected access
-      logger.info("Redirected access with game id %s",urlarray[2]);
+      logger.info("Redirected access with game id %s, Atheios version %s",urlarray[2],urlarray[3]);
+
       var sql = "SELECT * FROM gameasset WHERE asset_token=" + pool.escape(urlarray[2]) + " AND asset_ready=2";
       logger.info("SQL: %s", sql);
       pool.query(sql, function (error, rows, fields) {
@@ -142,6 +143,9 @@ wss.on('connection', (ws, req) => {
                   case '.GameLadderRequest':
                     func_GameLadderRequest(ws, randstr, rows, result);
                     break;
+                  case '.GameLadderRequest':
+                    func_GameLadderRequest(ws, randstr, rows, result);
+                    break;
                 }
 
               }
@@ -149,7 +153,8 @@ wss.on('connection', (ws, req) => {
           } else {
             // Game ID cannot be found
             logger.warn("GameID cannot be found:", urlarray[2]);
-            // TODO Maybe we need to find a solution that the  with a wrong Game ID we are not getting repeated attempts
+            jstring = "{\"@class\":\".AuthenticatedConnectResponse\", \"error\": \"Unknown GameID\", \"requestId\":\"0\"}";
+            ws.send(jstring);
             ws.close(1011, "ERR: game secrete not correct");
           }
         }
@@ -497,15 +502,15 @@ function func_FinishGameRequest(ws, randstr, rows, result) {
 // userId
 function func_GameLadderRequest(ws, randstr, rows, result) {
   var jstring;
-  var gameid=parseInt(result['gameId']);
-  var userid=parseInt(result['userId']);
+  var gameid = parseInt(result['gameId']);
+  var userid = parseInt(result['userId']);
 
-  logger.info("Found GameLadder\n%s", result);
+  logger.info("Found GameLadder");
 
   // First we find the latest game
-  var sql = "SELECT * FROM gameplay WHERE gameplay_options=2 AND gameasset_id=" + pool.escape(gameid) + " AND userid=" + pool.escape(userid) + " ORDER BY gameplay_end_date DESC LiMIT 1";
+  var sql = "SELECT * FROM gameplay WHERE gameplay_options=2 AND gameasset_id=" + pool.escape(gameid) + " ORDER BY gameplay_end_date DESC LiMIT 1";
   logger.info("SQL: %s", sql);
-  pool.query(sql,function (error, rows2, fields) {
+  pool.query(sql, function (error, rows2, fields) {
     if (error) {
       if (debugon)
         logger.error('Error: %s', error);
@@ -520,7 +525,7 @@ function func_GameLadderRequest(ws, randstr, rows, result) {
           logger.error('Error: %s', error);
         throw error;
       }
-      var vsql = "SELECT * FROM user WHERE id=" + userid + ";";
+      var vsql = "SELECT * FROM user ORDER BY id";
       logger.info("SQL: %s", vsql);
       pool.query(vsql, function (error, rows1, fields) {
         if (error) {
@@ -529,70 +534,85 @@ function func_GameLadderRequest(ws, randstr, rows, result) {
           throw error;
         }
 
-        var i,j;
-        var inplay=0;
+        var i, j;
+        var inplay = 0;
         var nrofgames = rows.length;
         var ladder = "";
         // Now we search for the latest game
-        if (nrofgames>0) {
+        if (nrofgames > 0) {
           for (j = 0; j < rows.length; j++) {
-            inplay+=rows[j].amount;
+            inplay += rows[j].amount;
           }
           for (j = 0; j < rows.length; j++) {
-            logger.info("j: %s, Rows2: %s, rows: %s", j, rows2[0].id, rows[j].id);
             if (rows2[0].id === rows[j].id)
               break;
           }
-
+          var k = rows[j].userid;
           ladder += "{\n" +
               "  \"position\" : \"" + (j + 1) + "\",\n" +
               "  \"score\" : \"" + rows[j].gameplay_score + "\",\n" +
-              "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+              "  \"displayname\" : \"" + rows1[k - 1].displayname + "\",\n" +
+              "  \"amount\" : \"" + rows[j].amount + "\",\n" +
               "  \"date\" : \"" + rows[j].date + "\"\n" +
               "},";
 
           if (nrofgames < 5) {
             for (i = 0; i < rows.length; i++) {
+              k = rows[i].userid;
               ladder += "{\n" +
                   "  \"position\" : \"" + (i + 1) + "\",\n" +
                   "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
-                  "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+                  "  \"displayname\" : \"" + rows1[k - 1].displayname + "\",\n" +
+                  "  \"amount\" : \"" + rows[i].amount + "\",\n" +
                   "  \"date\" : \"" + rows[i].date + "\"\n" +
                   "},";
             }
           } else {
             for (i = 0; i < 5; i++) {
+              k = rows[i].userid;
               ladder += "{\n" +
                   "  \"position\" : \"" + (i + 1) + "\",\n" +
                   "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
-                  "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
+                  "  \"displayname\" : \"" + rows1[k - 1].displayname + "\",\n" +
+                  "  \"amount\" : \"" + rows[i].amount + "\",\n" +
                   "  \"date\" : \"" + rows[i].date + "\"\n" +
                   "},";
             }
-            for (i = j; i < rows.length; i++) {
-              if (rows[i].userid == result['userId']) {
-                ladder += "{\n" +
-                    "  \"position\" : \"" + (i + 1) + "\",\n" +
-                    "  \"score\" : \"" + rows[i].gameplay_score + "\",\n" +
-                    "  \"displayname\" : \"" + rows1[0].displayname + "\",\n" +
-                    "  \"date\" : \"" + rows[i].date + "\"\n" +
-                    "},";
-              }
+            for (j = i; j < rows.length; j++) {
+              k = rows[j].userid;
+              ladder += "{\n" +
+                  "  \"position\" : \"" + (j + 1) + "\",\n" +
+                  "  \"score\" : \"" + rows[j].gameplay_score + "\",\n" +
+                  "  \"displayname\" : \"" + rows1[k - 1].displayname + "\",\n" +
+                  "  \"amount\" : \"" + rows[j].amount + "\",\n" +
+                  "  \"date\" : \"" + rows[j].date + "\"\n" +
+                  "},";
             }
           }
           ladder = ladder.slice(0, -1);
         } else {
-          ladder="";
+          ladder = "";
         }
-        jstring = "{\n" +
-            "  \"@class\" : \".GameLadderResponse\",\n" +
-            "  \"authToken\" : \"" + result['authToken'] + "\",\n" +
-            "  \"requestId\" : \"" + result['requestId'] + "\",\n" +
-            "  \"totalGames\" : " + nrofgames + ",\n" +
-            "  \"inPlay\" : " + inplay + ",\n" +
-            "  \"ladder\" : [\n" + ladder + "]\n" +
-            "}";
-        ws.send(jstring);
+        var sql = "SELECT *,TIMESTAMPDIFF(SECOND, asset_resolution, now()) AS secs FROM gameasset WHERE asset_ready=2 AND id=" + pool.escape(gameid);
+        logger.info("SQL: %s", sql);
+        pool.query(sql, async (error, rows, fields) => {
+          if (error) {
+            logger.error("%s", error);
+            throw(error);
+          } else {
+            logger.info("%s",rows[0]);
+            jstring = "{\n" +
+                "  \"@class\" : \".GameLadderResponse\",\n" +
+                "  \"authToken\" : \"" + result['authToken'] + "\",\n" +
+                "  \"requestId\" : \"" + result['requestId'] + "\",\n" +
+                "  \"totalGames\" : " + nrofgames + ",\n" +
+                "  \"inPlay\" : " + inplay + ",\n" +
+                "  \"timeLeft\" : " + rows[0].secs + ",\n" +
+                "  \"ladder\" : [\n" + ladder + "]\n" +
+                "}";
+            ws.send(jstring);
+          }
+        });
       });
     });
   });
