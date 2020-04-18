@@ -1,4 +1,6 @@
 var nodemailer = require('nodemailer');
+var logger = require("./logger");
+
 const fs = require('fs');
 
 
@@ -21,14 +23,9 @@ class Mail {
             subject: subject,
             html: html
         }
-        if (debugon)
-            console.log(">>>> DEBUG: ",mailOptions);
         let info=await this.smtpTransport.sendMail(mailOptions);
-        if (debugon) {
-            console.log(">>>> DEBUG: ", mailOptions);
-            console.log("Message sent: %s", info.messageId);
-            // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-        }
+        logger.info("Message sent: %s", info.messageId);
+        // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
     }
     async sendMailTemplate(tolist, templatenr) {
         var subject;
