@@ -424,13 +424,19 @@ router.post('/game_add_2', function(req, res) {
         // req.file contains information of uploaded file
         // req.body contains information of text fields, if there were any
 
+        logger.info("#server.routes.game.post.game_add2: Upload function triggered.")
         if (req.fileValidationError) {
+            logger.error("#server.routes.game.post.game_add2: Error: %s",req.fileValidationError);
             return res.send(req.fileValidationError);
         } else if (!req.file) {
+            logger.info("#server.routes.game.post.game_add2: "+req);
+            console.log(req);
             return res.send('Please select an image to upload');
         } else if (err instanceof multer.MulterError) {
+            logger.error("#server.routes.game.post.game_add2: Error: %s",err);
             return res.send(err);
         } else if (err) {
+            logger.error("#server.routes.game.post.game_add2: Error: %s",err);
             return res.send(err);
         }
         const asset_token = req.body.asset_token;
