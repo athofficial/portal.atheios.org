@@ -177,7 +177,43 @@ router.get('/editgame', MISC_ensureAuthenticated, function(req, res, next) {
             else {
                 periodeoptions+="<option value='1'>1 hour to leader board resolution</option>";
             }
-
+            wageoptions="";
+            if (rows[0].asset_wage==1) {
+                wageoptions+="<option value='1' selected>1 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='1'>1 ATH waging</option>";
+            }
+            if (rows[0].asset_wage==5) {
+                wageoptions+="<option value='5' selected>5 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='5'>5 ATH waging</option>";
+            }
+            if (rows[0].asset_wage==10) {
+                wageoptions+="<option value='10' selected>10 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='10'>10 ATH waging</option>";
+            }
+            if (rows[0].asset_wage==25) {
+                wageoptions+="<option value='25' selected>25 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='25'>25 ATH waging</option>";
+            }
+            if (rows[0].asset_wage==50) {
+                wageoptions+="<option value='50' selected>50 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='50'>50 ATH waging</option>";
+            }
+            if (rows[0].asset_wage==100) {
+                wageoptions+="<option value='100' selected>100 ATH waging</option>";
+            }
+            else {
+                wageoptions+="<option value='100'>100 ATH waging</option>";
+            }
 
             var player1options=
 
@@ -195,7 +231,8 @@ router.get('/editgame', MISC_ensureAuthenticated, function(req, res, next) {
                 player4option: buildPlayerOption(rows[0].asset_player4),
                 player5option: buildPlayerOption(rows[0].asset_player5),
                 gamedesc: rows[0].asset_description,
-                gameurl: rows[0].asset_url
+                gameurl: rows[0].asset_url,
+                wageoptions: wageoptions,
             });
         }
     });
@@ -375,43 +412,53 @@ router.post('/game_add_1', [
     const gamedesc = req.body.gamedesc;
     const gameurl = req.body.gameurl;
 
-    // ToDo Check image size, we really would like to have 640x400
-    if (!MISC_validation(req)) {
-        res.redirect('/addgame');
-    } else {
-        // First we do some housekeeping and remove all older asset entries which are not yet op to stage 2
-        // and more then an 10 min late
-        var vsql = "DELETE FROM gameasset WHERE asset_creation < (NOW() - INTERVAL 180 MINUTE) AND asset_ready < 2";
-        if (debugon)
-            logger.info("SQL: %s",vsql);
-        pool.query(vsql, function (error, rows, fields) {
-            if (error) {
-                if (debugon)
-                    logger.error('Error: %s' + error);
-                throw error;
-            } else {
-                var gametoken = MISC_maketoken(5);
-                var gamesecret = MISC_makeid(50);
+    var pattern = /^((http|https):\/\/)/;
 
-                // Stage one
-                var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation, asset_resolution) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "', '" + pool.mysqlNow() + "')";
+    if(gameurl!="" && !pattern.test(gameurl)) {
+        req.flash('danger', 'Please specify a proper URL starting with https:// or http://');
+        res.redirect(req.headers.referer);
+
+    }
+    else {
+
+        // ToDo Check image size, we really would like to have 640x400
+        if (!MISC_validation(req)) {
+            res.redirect(req.headers.referer);
+        } else {
+            // First we do some housekeeping and remove all older asset entries which are not yet op to stage 2
+            // and more then an 10 min late
+            var vsql = "DELETE FROM gameasset WHERE asset_creation < (NOW() - INTERVAL 180 MINUTE) AND asset_ready < 2";
+            if (debugon)
                 logger.info("SQL: %s", vsql);
-                pool.query(vsql, function (error, rows, fields) {
-                    if (error) {
-                        if (debugon)
-                            logger.error('Error: %s' + error);
-                        throw error;
-                    } else {
-                        res.render('game_add_2', {
-                            title: 'Portal | Step2 : Add game asset',
-                            version: version,
-                            asset_token: gametoken,
-                            user: req.user
-                        });
-                    }
-                });
-            }
-        });
+            pool.query(vsql, function (error, rows, fields) {
+                if (error) {
+                    if (debugon)
+                        logger.error('Error: %s' + error);
+                    throw error;
+                } else {
+                    var gametoken = MISC_maketoken(5);
+                    var gamesecret = MISC_makeid(50);
+
+                    // Stage one
+                    var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation, asset_resolution) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "', '" + pool.mysqlNow() + "')";
+                    logger.info("SQL: %s", vsql);
+                    pool.query(vsql, function (error, rows, fields) {
+                        if (error) {
+                            if (debugon)
+                                logger.error('Error: %s' + error);
+                            throw error;
+                        } else {
+                            res.render('game_add_2', {
+                                title: 'Portal | Step2 : Add game asset',
+                                version: version,
+                                asset_token: gametoken,
+                                user: req.user
+                            });
+                        }
+                    });
+                }
+            });
+        }
     }
 });
 
@@ -474,6 +521,7 @@ router.post('/game_add_2', function(req, res) {
 router.post('/game_add_3', [
     check('scheme').notEmpty().withMessage('Something went wrong: No gaming scheme'),
     check('periode').notEmpty().withMessage('Something went wrong: No gaming period'),
+    check('wage').notEmpty().withMessage('Something went wrong: No waging specified'),
     check('player1').notEmpty().withMessage('Something went wrong: No player 1'),
     check('player2').notEmpty().withMessage('Something went wrong: No player 2'),
     check('player3').notEmpty().withMessage('Something went wrong: No player 3'),
@@ -489,6 +537,8 @@ router.post('/game_add_3', [
     const asset_player4 = req.body.player4;
     const asset_player5 = req.body.player5;
     const asset_options = 0;
+    const asset_wage = req.body.wage;
+
 
     if (!MISC_validation(req)) {
         res.redirect('/game_add3');
@@ -506,7 +556,8 @@ router.post('/game_add_3', [
                         user: req.user
                     });
                 } else {
-                    var vsql = "UPDATE gameasset SET asset_ready=2, asset_athaddr='"+athaddr+"', asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
+                    var vsql = "UPDATE gameasset SET asset_ready=2, asset_wage='" +
+                        asset_wage + "', asset_athaddr='"+athaddr+"', asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
                     if (debugon)
                         logger.info("SQL: %s", vsql);
                     pool.query(vsql, function (error, rows, fields) {
@@ -554,13 +605,15 @@ router.post('/game_add_3', [
 router.post('/game_edit', [
     check('gametoken', 'Something went wrong: No asset token').notEmpty(),
     check('scheme', 'Something went wrong: No scheme').notEmpty(),
+    check('wage', 'Something went wrong: No wage amount').notEmpty(),
     check('periode', 'Something went wrong: No periode').notEmpty(),
     check('player1', 'Something went wrong: No player 1').notEmpty(),
     check('player2', 'Something went wrong: No player 2').notEmpty(),
     check('player3', 'Something went wrong: No player 3').notEmpty(),
     check('player4', 'Something went wrong: No player 4').notEmpty(),
     check('player5', 'Something went wrong: No player 5').notEmpty(),
-    check('gamedesc', 'Something went wrong: Missing game description').notEmpty()
+    check('gamedesc', 'Something went wrong: Missing game description').notEmpty(),
+    check('gamename2', 'Something went wrong: Missing game name').notEmpty()
 ], function(req, res) {
     const asset_token = req.body.gametoken;
     const asset_scheme = req.body.scheme;
@@ -572,31 +625,38 @@ router.post('/game_edit', [
     const asset_player5 = req.body.player5;
     const asset_description = req.body.gamedesc;
     const asset_url = req.body.gameurl;
-    const asset_name = req.body.gamename;
+    const asset_name = req.body.gamename2;
+    const asset_wage = req.body.wage;
 
+    var pattern = /^((http|https):\/\/)/;
 
-    if (!MISC_validation(req)) {
-        res.redirect('/editgame?id=2');
-    } else {
-        if(isNaN(asset_scheme) || isNaN(asset_periode)) {
-           req.flash('danger', 'Please specify scheme and periode with the predefined values.');
+    if(asset_url!="" && !pattern.test(asset_url)) {
+        req.flash('danger', 'Please specify a proper URL starting with https:// or http://');
+        res.redirect(req.headers.referer);
+    }
+    else {
+        if (!MISC_validation(req)) {
             res.redirect('/currentgame');
-        }
-        else {
-            var vsql = "UPDATE gameasset SET asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "', asset_description='" + asset_description + "', asset_url='" + asset_url + "' WHERE asset_token='" + asset_token +"'";
-            if (debugon)
-               logger.info("SQL: %s",vsql);
-            pool.query(vsql, function (error, rows, fields) {
-                if (error) {
-                    if (debugon)
-                        logger.error('Error: %s' + error);
-                } else {
-                    confmail = new Mail();
-                    confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
-                    req.flash('info', 'Asset Updated');
-                    res.redirect('/currentgame');
-                }
-            });
+        } else {
+            if (isNaN(asset_scheme) || isNaN(asset_periode)) {
+                req.flash('danger', 'Please specify scheme and periode with the predefined values.');
+                res.redirect('/currentgame');
+            } else {
+                var vsql = "UPDATE gameasset SET asset_wage='" + asset_wage + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "', asset_description='" + asset_description + "', asset_url='" + asset_url + "', asset_name='" + asset_name + "' WHERE asset_token='" + asset_token + "'";
+                if (debugon)
+                    logger.info("SQL: %s", vsql);
+                pool.query(vsql, function (error, rows, fields) {
+                    if (error) {
+                        if (debugon)
+                            logger.error('Error: %s' + error);
+                    } else {
+                        confmail = new Mail();
+                        confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
+                        req.flash('info', 'Asset Updated');
+                        res.redirect('/currentgame');
+                    }
+                });
+            }
         }
     }
 });

@@ -5,6 +5,19 @@ block content
     .container
         h4 Step 3: General configuration data
         form(method='POST', action='/game_add_3')
+
+            #form-group
+            label Waging (in ATH)
+            select.custom-select(name='wage')
+                option(value='1') 1 ATH is waged per game
+                option(value='5') 5 ATH is waged per game
+                option(value='10') 10 ATH is waged per game
+                option(value='25') 25 ATH is waged per game
+                option(value='50') 50 ATH is waged per game
+                option(value='100') 100 ATH is waged per game
+            small#depositHelp.form-text.text-muted This is the wage which You ask for this game.
+            br
+
             #form-group
             input(id='asset_token', name='asset_token', type='hidden', value=asset_token)
             label Distribution scheme (in percent)

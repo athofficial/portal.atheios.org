@@ -12,14 +12,24 @@ block content
         small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
         br
         #form-group
-        label Game token:
-        input.form-control(name='gametoken', type='text', value=gametoken, readonly=true)
+        .input-group-prepend
+          .input-group-text.alert-success Game token:
+          input#gametoken.form-control(name='gametoken', type='text',aria-describedby='inputGroupPrepend', value=gametoken, readonly=true)
+          button.btn-outline-success(type="button", onclick="myFunction('gametoken')") Copy
+          script.
+            function myFunction(inputvar) {
+              var copyText = document.getElementById(inputvar);
+              copyText.select();
+              document.execCommand("copy");
+            }
         small#depositHelp.form-text.text-muted This is Your game token
         br
         #form-group
-        label Game secret:
-        input.form-control(name='gamesecret', type='text', value=gamesecret, readonly=true)
-        small#depositHelp.form-text.text-muted This is Your game token
+        .input-group-prepend
+          .input-group-text.alert-success Game secret:
+          input#gamesecret.form-control(name='gamesecret', type='text', aria-describedby='inputGroupPrepend', value=gamesecret, readonly=true)
+          button.btn-outline-success(type="button" onclick="myFunction('gamesecret')") Copy
+        small#depositHelp.form-text.text-muted This is Your game secret
         br
         #form-group
         label Game ATH account:
@@ -28,6 +38,14 @@ block content
         br
       h2 Configurable asset data
       .container
+        h3 Wage
+        #form-group
+        label Waging (in ATH)
+        select.custom-select(name='wage')
+          !=wageoptions
+        small#depositHelp.form-text.text-muted This is the wage which You ask for this game.
+        br
+
         h3 Fund schemes
         #form-group
         label Distribution scheme (in percent)
@@ -65,17 +83,21 @@ block content
         br
       h3 Game info
       .container
+        #form-group
+        label Game name:
+        input.form-control(name='gamename2', type='text', value=gamename, maxlength='80')
+        small#depositHelp.form-text.text-muted Please select a name for Your game. Keep it simple so that You can easily identify the game.
+        br
         label Game description (max 512 char):
         textarea.form-control(name='gamedesc', rows='8', cols='64', maxlength='512')
           !=gamedesc
         small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description of the game.
         br
         #form-group
-        label Game URL (if available):
+        label Game URL (including http:// or https://):
         input.form-control(name='gameurl', type='text', size='255' value=gameurl)
-        small#depositHelp.form-text.text-muted Please enter a description, the game idea. Basically a description the game should be played.
+        small#depositHelp.form-text.text-muted Enter the complete URL with https:// or http://. If no URL is yet available, leave it empty
         br
 
       input.btn.btn-primary(type='submit',value='Update')
-      small#depositHelp.form-text.text-muted When submitting a couple of things are going to happen. You will get a game id allocated, You also get an ATH gaming account for this game. Everything is free of charge and can be revoked.
 

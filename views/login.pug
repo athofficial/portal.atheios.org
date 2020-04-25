@@ -2,13 +2,13 @@ extends layout
 
 block content
   h1 Login
-  form(method='POST', action='/login')
+  form(method='POST', action='/login', autocomplete="on")
     #form-group
       label Username:
-      input.form-control(name='username',type='text', autofocus, autocomplete='on')
+      input.form-control(name='username',type='text', autocomplete="username")
     #form-group
       label Password:
-      input.form-control(name='password',type='password', autocomplete='on')
+      input.form-control(name='password',type='password', autocomplete="current-password")
     br
     input.btn.btn-primary(type='submit',value='Submit')
     p
