@@ -5,16 +5,7 @@ block content
         .container.align-bottom
             h1.mb-1.text-secondary Game developer portal stats
     .container
-        section.bg-warning.text-black
-            .container
-                h2 General
-                table.table
-                    tr
-                        th Users
-                        th Logins
-                    tbody
-                    tr
-                        td
-                            = registeredUser
-                        td
-                            = logincnt
+        script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js")
+        .container
+            p !{tag_body}
+

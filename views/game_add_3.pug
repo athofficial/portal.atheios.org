@@ -29,7 +29,7 @@ block content
                 option(value='0.7') 70%, which means 30% go to You, rest to the players
                 option(value='0.9') 90%, which means 10% go to You, rest to the players
                 option(value='1') 100%, all goes to the players
-            small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
+            small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after game resolution. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
             br
             #form-group
             label Distribution scheme (in percent) per player. Must be 100% to work.
@@ -38,70 +38,89 @@ block content
             .col
                 label Player 1
                 select.custom-select(name='player1')
-                    option(value='9') 90% of the wage available to the 1st player
-                    option(value='8') 80% of the wage available to the 1st player
-                    option(value='7') 70% of the wage available to the 1st player
-                    option(value='6', selected) 60% of the wage available to the 1st player
-                    option(value='5') 50% of the wage available to the 1st player
-                    option(value='4') 40% of the wage available to the 1st player
-                    option(value='3') 30% of the wage available to the 1st player
-                    option(value='2') 20% of the wage available to the 1st player
-                    option(value='1') 10% of the wage available to the 1st player
+                    option(value='90') 90% of the wage available to the 1st player
+                    option(value='80') 80% of the wage available to the 1st player
+                    option(value='70') 70% of the wage available to the 1st player
+                    option(value='60', selected) 60% of the wage available to the 1st player
+                    option(value='50') 50% of the wage available to the 1st player
+                    option(value='40') 40% of the wage available to the 1st player
+                    option(value='35') 30% of the wage available to the 1st player
+                    option(value='30') 30% of the wage available to the 1st player
+                    option(value='25') 25% of the wage available to the 1st player
+                    option(value='20') 20% of the wage available to the 1st player
+                    option(value='15') 15% of the wage available to the 1st player
+                    option(value='10') 10% of the wage available to the 1st player
+                    option(value='5') 5% of the wage available to the 1st player
             .col
                 label Player 2
                 select.custom-select(name='player2')
-                    option(value='9') 90% of the wage available to the 2nd player
-                    option(value='8') 80% of the wage available to the 2nd player
-                    option(value='7') 70% of the wage available to the 2nd player
-                    option(value='6') 60% of the wage available to the 2nd player
-                    option(value='5') 50% of the wage available to the 2nd player
-                    option(value='4') 40% of the wage available to the 2nd player
-                    option(value='3' selected) 30% of the wage available to the 2nd player
-                    option(value='2') 20% of the wage available to the 2nd player
-                    option(value='1') 10% of the wage available to the 2nd player
-                    option(value='0') 0% of the wage available to the 2nd player
+                    option(value='90') 90% of the wage available to the 2nd player
+                    option(value='80') 80% of the wage available to the 2nd player
+                    option(value='70') 70% of the wage available to the 2nd player
+                    option(value='60') 60% of the wage available to the 2nd player
+                    option(value='50') 50% of the wage available to the 2nd player
+                    option(value='40') 40% of the wage available to the 2nd player
+                    option(value='35') 30% of the wage available to the 2nd player
+                    option(value='30') 30% of the wage available to the 2nd player
+                    option(value='25', selected) 25% of the wage available to the 2nd player
+                    option(value='20') 20% of the wage available to the 2nd player
+                    option(value='15') 15% of the wage available to the 2nd player
+                    option(value='10') 10% of the wage available to the 2nd player
+                    option(value='5') 5% of the wage available to the 2nd player
             .col
                 label Player 3
                 select.custom-select(name='player3')
-                    option(value='9') 90% of the wage available to the 3rd player
-                    option(value='8') 80% of the wage available to the 3rd player
-                    option(value='7') 70% of the wage available to the 3rd player
-                    option(value='6') 60% of the wage available to the 3rd player
-                    option(value='5') 50% of the wage available to the 3rd player
-                    option(value='4') 40% of the wage available to the 3rd player
-                    option(value='3') 30% of the wage available to the 3rd player
-                    option(value='2') 20% of the wage available to the 3rd player
-                    option(value='1', selected) 10% of the wage available to the 3rd player
-                    option(value='0') 0% of the wage available to the 3rd player
-            .col
+                    option(value='90') 90% of the wage available to the 3rd player
+                    option(value='80') 80% of the wage available to the 3rd player
+                    option(value='70') 70% of the wage available to the 3rd player
+                    option(value='60') 60% of the wage available to the 3rd player
+                    option(value='50') 50% of the wage available to the 3rd player
+                    option(value='40') 40% of the wage available to the 3rd player
+                    option(value='35') 30% of the wage available to the 3rd player
+                    option(value='30') 30% of the wage available to the 3rd player
+                    option(value='25') 25% of the wage available to the 3rd player
+                    option(value='20') 20% of the wage available to the 3rd player
+                    option(value='15', selected) 15% of the wage available to the 3rd player
+                    option(value='10') 10% of the wage available to the 3rd player
+                    option(value='5') 5% of the wage available to the 3rd player
+
+           .col
                 label Player 4
                 select.custom-select(name='player4')
-                    option(value='9') 90% of the wage available to the 4th player
-                    option(value='8') 80% of the wage available to the 4th player
-                    option(value='7') 70% of the wage available to the 4th player
-                    option(value='6') 60% of the wage available to the 4th player
-                    option(value='5') 50% of the wage available to the 4th player
-                    option(value='4') 40% of the wage available to the 4th player
-                    option(value='3') 30% of the wage available to the 4th player
-                    option(value='2') 20% of the wage available to the 4th player
-                    option(value='1') 10% of the wage available to the 4th player
-                    option(value='0', selected) 0% of the wage available to the 4th player
+                    option(value='90') 90% of the wage available to the 4th player
+                    option(value='80') 80% of the wage available to the 4th player
+                    option(value='70') 70% of the wage available to the 4th player
+                    option(value='60') 60% of the wage available to the 4th player
+                    option(value='50') 50% of the wage available to the 4th player
+                    option(value='40') 40% of the wage available to the 4th player
+                    option(value='35') 30% of the wage available to the 4th player
+                    option(value='30') 30% of the wage available to the 4th player
+                    option(value='25') 25% of the wage available to the 4th player
+                    option(value='20') 20% of the wage available to the 4th player
+                    option(value='15') 15% of the wage available to the 4th player
+                    option(value='10', selected) 10% of the wage available to the 4th player
+                    option(value='5') 5% of the wage available to the 4th player
+
             .col
                 label Player 5
                 select.custom-select(name='player5')
-                    option(value='9') 90% of the wage available to the 5th player
-                    option(value='8') 80% of the wage available to the 5th player
-                    option(value='7') 70% of the wage available to the 5th player
-                    option(value='6') 60% of the wage available to the 5th player
-                    option(value='5') 50% of the wage available to the 5th player
-                    option(value='4') 40% of the wage available to the 5th player
-                    option(value='3') 30% of the wage available to the 5th player
-                    option(value='2') 20% of the wage available to the 5th player
-                    option(value='1') 10% of the wage available to the 5th player
-                    option(value='0', selected) 0% of the wage available to the 5th player
+                    option(value='90') 90% of the wage available to the 5th player
+                    option(value='80') 80% of the wage available to the 5th player
+                    option(value='70') 70% of the wage available to the 5th player
+                    option(value='60') 60% of the wage available to the 5th player
+                    option(value='50') 50% of the wage available to the 5th player
+                    option(value='40') 40% of the wage available to the 5th player
+                    option(value='35') 30% of the wage available to the 5th player
+                    option(value='30') 30% of the wage available to the 5th player
+                    option(value='25') 25% of the wage available to the 5th player
+                    option(value='20') 20% of the wage available to the 5th player
+                    option(value='15') 15% of the wage available to the 5th player
+                    option(value='10') 10% of the wage available to the 5th player
+                    option(value='5', selected) 5% of the wage available to the 5th player
 
 
-            small#depositHelp.form-text.text-muted The distribution scheme is the way how You return ATH after a play periode. You can choose 50 for 50% up to 100%. In the case of 50% only 50% of the collected ATH will be redistributed to the players. Currently the redistribution is according to the following scheme: half of the redistributed pot goes to the leader, 30% to the 2nd and 20% to the third person.
+
+            small#depositHelp.form-text.text-muted The distribution scheme for players determines how You distribute the remaining pot to the players.
             br
             #form-group
             label Gaming periode (in days)

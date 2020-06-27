@@ -10,6 +10,7 @@ block content
         th Game asset
         th Publish state
         th Delete
+        th Action
         th Stats
       tbody
         each rows in game
@@ -25,7 +26,9 @@ block content
               td
                 a(class="btn btn-secondary btn-sm" href="/publishgame?id=" + rows.id, role="button") Unpublish
             td
-              a(class="btn btn-warning btn-sm" href="/deletegame?id=" + rows.id role="button") Delete
+              a(class="btn btn-danger btn-sm" href="/deletegame?id=" + rows.id role="button") Delete
+            td
+              a(class="btn btn-warning btn-sm" href="/highlightgame?id=" + rows.id role="button") Action
             td
               a(class="btn btn-warning btn-sm" href="/statsgame?id=" + rows.id role="button") Stats
 

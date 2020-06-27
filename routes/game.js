@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 var mv = require('mv');
 const {athGetAddress, athGetBalance, athdoWithdraw} = require('../ath');
+const Email = require('email-templates');
 
 
 
@@ -241,65 +242,89 @@ router.get('/editgame', MISC_ensureAuthenticated, function(req, res, next) {
 function buildPlayerOption(value) {
     var text="";
 
+    if (value=="100") {
+        text+="<option value='100' selected>100% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='100'>100% of the funds go to the player</option>";
+    }
+    if (value=="90") {
+        text+="<option value='90' selected>90% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='90'>90% of the funds go to the player</option>";
+    }
+    if (value=="80") {
+        text+="<option value='80' selected>80% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='80'>80% of the funds go to the player</option>";
+    }
+    if (value=="70") {
+        text+="<option value='70' selected>70% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='70'>70% of the funds go to the player</option>";
+    }
+    if (value=="60") {
+        text+="<option value='60' selected>60% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='60'>60% of the funds go to the player</option>";
+    }
+    if (value=="50") {
+        text+="<option value='50' selected>50% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='50'>50% of the funds go to the player</option>";
+    }
+    if (value=="40") {
+        text+="<option value='40' selected>40% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='40'>40% of the funds go to the player</option>";
+    }
+    if (value=="35") {
+        text+="<option value='35' selected>35% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='35'>35% of the funds go to the player</option>";
+    }
+    if (value=="30") {
+        text+="<option value='30' selected>30% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='30'>30% of the funds go to the player</option>";
+    }
+    if (value=="25") {
+        text+="<option value='25' selected>25% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='25'>25% of the funds go to the player</option>";
+    }
+    if (value=="20") {
+        text+="<option value='20' selected>20% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='20'>20% of the funds go to the player</option>";
+    }
+    if (value=="15") {
+        text+="<option value='15' selected>15% of the funds go to the player</option>";
+    }
+    else {
+        text+="<option value='15'>15% of the funds go to the player</option>";
+    }
     if (value=="10") {
-        text+="<option value='10' selected>100% of the funds go to the player</option>";
+        text+="<option value='10' selected>10% of the funds go to the player</option>";
     }
     else {
-        text+="<option value='10'>100% of the funds go to the player</option>";
-    }
-    if (value=="9") {
-        text+="<option value='9' selected>90% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='9'>90% of the funds go to the player</option>";
-    }
-    if (value=="8") {
-        text+="<option value='8' selected>80% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='8'>80% of the funds go to the player</option>";
-    }
-    if (value=="7") {
-        text+="<option value='7' selected>70% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='7'>70% of the funds go to the player</option>";
-    }
-    if (value=="6") {
-        text+="<option value='6' selected>60% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='6'>60% of the funds go to the player</option>";
+        text+="<option value='10'>10% of the funds go to the player</option>";
     }
     if (value=="5") {
-        text+="<option value='5' selected>50% of the funds go to the player</option>";
+        text+="<option value='5' selected>5% of the funds go to the player</option>";
     }
     else {
-        text+="<option value='5'>50% of the funds go to the player</option>";
-    }
-    if (value=="4") {
-        text+="<option value='4' selected>40% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='4'>40% of the funds go to the player</option>";
-    }
-    if (value=="3") {
-        text+="<option value='3' selected>30% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='3'>30% of the funds go to the player</option>";
-    }
-    if (value=="2") {
-        text+="<option value='2' selected>20% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='2'>20% of the funds go to the player</option>";
-    }
-    if (value=="1") {
-        text+="<option value='1' selected>10% of the funds go to the player</option>";
-    }
-    else {
-        text+="<option value='1'>10% of the funds go to the player</option>";
+        text+="<option value='5'>5% of the funds go to the player</option>";
     }
     if (value=="0") {
         text+="<option value='0' selected>0% of the funds go to the player</option>";
@@ -311,7 +336,7 @@ return(text);
 }
 
 router.get('/currentgame', MISC_ensureAuthenticated, function(req, res, next) {
-    var sql = "SELECT * FROM gameasset WHERE userid="+req.user.id + " AND asset_ready=2";
+    var sql = "SELECT * FROM gameasset WHERE userid="+pool.escape(req.user.id) + " AND asset_ready=2";
     if (debugon)
         logger.info("SQL: %s",sql);
     pool.query(sql, function (error, rows, fields) {
@@ -330,11 +355,40 @@ router.get('/currentgame', MISC_ensureAuthenticated, function(req, res, next) {
     });
 });
 
+router.get('/highlightgame', MISC_ensureAuthenticated, function(req, res, next) {
+    let gameid = parseInt(req.query.id);
+    let userid = parseInt(req.user.id);
+
+    var sql = "SELECT * FROM gameasset WHERE id = " + pool.escape(gameid) + " AND userid = " + pool.escape(userid) + " AND asset_ready=2";
+    logger.info("SQL: %s",sql);
+    pool.query(sql, function (error, rows, fields) {
+        if (error) {
+            logger.error('SQL failed %s', error);
+            throw error;
+        } else {
+            if (rows.length==1) {
+                res.render('game_highlight', {
+                    title: 'Portal | Highlight existing game asset',
+                    version: version,
+                    user: req.user,
+                    gamename: rows[0].asset_name,
+                    gameperiod: rows[0].asset_period,
+                    gametoken: rows[0].asset_token,
+                    gamesecret: rows[0].asset_secret
+                });
+            } else {
+                req.flash('info', 'Action on asset not possible');
+                res.redirect('/currentgame');
+            }
+        }
+    });
+});
+
 
 router.get('/publishgame', MISC_ensureAuthenticated, function(req, res, next) {
     let query = req.query.id;
 
-    var vsql = "UPDATE gameasset SET asset_options=asset_options ^ b'00000001' WHERE id='" + query + "'";
+    var vsql = "UPDATE gameasset SET asset_options=asset_options ^ b'00000001' WHERE id=" + pool.escape(query);
     if (debugon)
         logger.info("SQL: %s",vsql);
     pool.query(vsql, function (error, rows, fields) {
@@ -350,46 +404,95 @@ router.get('/publishgame', MISC_ensureAuthenticated, function(req, res, next) {
 });
 
 router.get('/statsgame', MISC_ensureAuthenticated, function(req, res, next) {
-    let query = req.query.id;
+    let gameid = parseInt(req.query.id);
+    let userid = parseInt(req.user.id);
 
-    var vsql = "SELECT * FROM gameasset WHERE id='" + query + "'";
-    if (debugon)
-        logger.info("SQL: %s",vsql);
-    pool.query(vsql, function (error, rows, fields) {
+
+    var i;
+    var month;
+    var arr=[];
+    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    var vsql = "SELECT * FROM gameasset WHERE id = " + pool.escape(gameid) + " AND userid = " + pool.escape(userid) + " AND asset_ready=2";
+    pool.query(vsql, function (error, rows2, fields) {
         if (error) {
-            if (debugon)
-                logger.error('Error: %s' + error);
-            throw error;
-        }
-        var vsql = "SELECT * FROM gameplay WHERE gameasset_id=" + rows[0].id;
-        if (debugon)
-            logger.info("SQL: %s",vsql);
-        pool.query(vsql, function (error, rows1, fields) {
-            if (error) {
-                if (debugon)
-                    logger.error('Error: %s' + error);
-                throw error;
+            logger.error('#routes.games.get.statsgame: Error: %s', error);
+            req.flash('danger', 'An error occured: ' + error);
+            res.redirect('/');
+        } else {
+            if (rows2.length == 1) {
+                // First we check by how many users the game is played
+                var vsql = "SELECT *, DATE_FORMAT(gameplay_start_date, \"%m\") AS startdate FROM gameplay WHERE gameasset_id = " + rows2[0].id + " ORDER BY gameplay_start_date";
+                pool.query(vsql, function (error, rows, fields) {
+                    if (error) {
+                        logger.error('#routes.games.get.statsgame: Error: %s', error);
+                        req.flash('danger', 'An error occured: ' + error);
+                        res.redirect('/');
+                    } else {
+
+                        for (i = 0; i < 12; i++) {
+                            arr[i] = 0;
+                        }
+                        d = new Date();
+                        month = d.getMonth();
+                        for (i = 0; i < rows.length; i++) {
+                            console.log("%s: %s", i, rows[i].startdate);
+                            arr[parseInt(rows[i].startdate) - 1] = arr[parseInt(rows[i].startdate) - 1] + 1;
+                        }
+                        logger.info("#routes.stats.get.stats: Week number: %s", month);
+                        var content;
+                        content = "<h3>Game stats</h3><p>Currently Your game has been " + rows.length + " times played.</p>";
+                        content += "<canvas id='chartjs-1' class='chartjs' width='1540' height='770' style='display: block; height: 385px; width: 770px;'></canvas>";
+                        chartobj = {
+                            type: 'bar',
+                            data: {
+                                labels: monthNames,
+                                datasets: [{
+                                    label: 'Gameplays',
+                                    data: arr,
+                                    backgroundColor: [
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0,5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)',
+                                        'rgba(0, 0, 255, 0.5)'
+                                    ],
+                                    fill: true,
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    yAxes: {
+                                        ticks: {
+                                            beginAtZero: true
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        content += "" +
+                            "<script>new Chart(document.getElementById('chartjs-1')," + JSON.stringify(chartobj) + ");</script>";
+
+                        res.render("stats", {
+                            title: 'Portal | Statistics',
+                            version: version,
+                            registeredUser: rows.length,
+                            tag_body: content
+                        });
+                    }
+                });
             }
-            var statsjson = [
-                {
-                    title: "Games played",
-                    description: "Number of games played",
-                    value: rows1.length
-                },
-                {
-                    title: "Games started",
-                    description: "This are the games started, ",
-                    value: 145
-                }
-            ];
-            // Display uploaded image for user validation
-            res.render('game_stats', {
-                gamename: rows[0].asset_name,
-                title: 'Game statistics',
-                statsitem: statsjson,
-                version: version
-            });
-        });
+        }
     });
 });
 
@@ -440,7 +543,7 @@ router.post('/game_add_1', [
                     var gamesecret = MISC_makeid(50);
 
                     // Stage one
-                    var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation, asset_resolution) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "', '" + pool.mysqlNow() + "')";
+                    var vsql = "INSERT INTO gameasset (userid, asset_ready, asset_name, asset_scheme, asset_periode, asset_token, asset_secret, asset_description, asset_url, asset_creation, asset_resolution, asset_firstblood) VALUES ('" + req.user.id + "', '0', '" + gamename + "','" + "" + "', '" + "" + "', '" + gametoken + "', '" + gamesecret + "', '" + gamedesc + "', '" + gameurl + "', '" + pool.mysqlNow() + "', '" + pool.mysqlNow() + "', 0)";
                     logger.info("SQL: %s", vsql);
                     pool.query(vsql, function (error, rows, fields) {
                         if (error) {
@@ -528,9 +631,9 @@ router.post('/game_add_3', [
     check('player4').notEmpty().withMessage('Something went wrong: No player 4'),
     check('player5').notEmpty().withMessage('Something went wrong: No player 5')
 ],function(req, res) {
-    const asset_token = req.body.asset_token;
-    const asset_scheme = req.body.scheme;
-    const asset_periode = req.body.periode;
+    const asset_token =   req.body.asset_token;
+    const asset_scheme =  req.body.scheme;
+    const asset_partyperiod = req.body.periode;
     const asset_player1 = req.body.player1;
     const asset_player2 = req.body.player2;
     const asset_player3 = req.body.player3;
@@ -544,7 +647,7 @@ router.post('/game_add_3', [
         res.redirect('/game_add3');
     } else {
         var sum=Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
-        if (sum == 10) {
+        if (sum == 100) {
             logger.info("Update success");
             athGetAddress(function (error, athaddr) {
                 if (error) {
@@ -556,8 +659,7 @@ router.post('/game_add_3', [
                         user: req.user
                     });
                 } else {
-                    var vsql = "UPDATE gameasset SET asset_ready=2, asset_wage='" +
-                        asset_wage + "', asset_athaddr='"+athaddr+"', asset_options='" + asset_options + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "' WHERE asset_token='" + asset_token + "'";
+                    var vsql = "UPDATE gameasset SET asset_ready=2, asset_wage='" + asset_wage + "', asset_athaddr=" + pool.escape(athaddr) + ", asset_options=" + pool.escape(asset_options) + ", asset_scheme=" + pool.escape(asset_scheme) + ", asset_partyperiod=" + pool.escape(asset_partyperiod) + ", asset_player1=" + pool.escape(asset_player1) + ", asset_player2=" + pool.escape(asset_player2) + ", asset_player3=" + pool.escape(asset_player3) + ", asset_player4=" + pool.escape(asset_player4) + ", asset_player5=" + pool.escape(asset_player5) + " WHERE asset_token=" + pool.escape(asset_token);
                     if (debugon)
                         logger.info("SQL: %s", vsql);
                     pool.query(vsql, function (error, rows, fields) {
@@ -573,8 +675,24 @@ router.post('/game_add_3', [
                                         logger.error('>>> Error: %s' + error);
                                     throw error;
                                 } else {
-                                    confmail = new Mail();
-                                    confmail.sendMail(req.user.email, "Atheios Portal: An asset has been created: " + rows[0].asset_name, 'A game asset has been created. Gametoken: ' + asset_token);
+                                    global.email
+                                        .send({
+                                            template: 'asset_creation',
+                                            message: {
+                                                to: req.user.email
+                                            },
+                                            locals: {
+                                                name: rows2[0].displayname,
+                                                date: pool.mysqlNow(),
+                                                gamename: rows[0].asset_name,
+                                                messagetext: 'Congratulations. A new game asset has been created. The gameasset have the game token id: ' + asset_token +
+                                                    '. The game token comes also with a game secret. Both will be used to secure the communication in the GARP protocol.' +
+                                                    ' Check out more information on our documentation platform: https://atheios.readthedocs.io/en/latest/gamedev_modules'
+                                            }
+                                        })
+                                        .then(console.log)
+                                        .catch(console.error);
+
                                     req.flash('info', 'Asset created');
                                     res.redirect('/currentgame');
                                 }
@@ -617,7 +735,7 @@ router.post('/game_edit', [
 ], function(req, res) {
     const asset_token = req.body.gametoken;
     const asset_scheme = req.body.scheme;
-    const asset_periode = req.body.periode;
+    const asset_partyperiod = req.body.periode;
     const asset_player1 = req.body.player1;
     const asset_player2 = req.body.player2;
     const asset_player3 = req.body.player3;
@@ -635,28 +753,38 @@ router.post('/game_edit', [
         res.redirect(req.headers.referer);
     }
     else {
-        if (!MISC_validation(req)) {
-            res.redirect('/currentgame');
-        } else {
-            if (isNaN(asset_scheme) || isNaN(asset_periode)) {
-                req.flash('danger', 'Please specify scheme and periode with the predefined values.');
+        var sum = Number(asset_player1) + Number(asset_player2) + Number(asset_player3) + Number(asset_player4) + Number(asset_player5);
+        logger.info("#routes.game.post.gameedit: Sum %s, %s, %s, %s, %s, %s", sum, asset_player1, asset_player2, asset_player3, asset_player4, asset_player5);
+        if (sum == 100) {
+            logger.info("Update success");
+
+            if (!MISC_validation(req)) {
                 res.redirect('/currentgame');
             } else {
-                var vsql = "UPDATE gameasset SET asset_wage='" + asset_wage + "', asset_scheme='" + asset_scheme + "', asset_periode='" + asset_periode + "', asset_player1='" + asset_player1 + "', asset_player2='" + asset_player2 + "', asset_player3='" + asset_player3 + "', asset_player4='" + asset_player4 + "', asset_player5='" + asset_player5 + "', asset_description='" + asset_description + "', asset_url='" + asset_url + "', asset_name='" + asset_name + "' WHERE asset_token='" + asset_token + "'";
-                if (debugon)
-                    logger.info("SQL: %s", vsql);
-                pool.query(vsql, function (error, rows, fields) {
-                    if (error) {
-                        if (debugon)
-                            logger.error('Error: %s' + error);
-                    } else {
-                        confmail = new Mail();
-                        confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
-                        req.flash('info', 'Asset Updated');
-                        res.redirect('/currentgame');
-                    }
-                });
+                if (isNaN(asset_scheme) || isNaN(asset_partyperiod)) {
+                    req.flash('danger', 'Please specify scheme and periode with the predefined values.');
+                    res.redirect('/currentgame');
+                } else {
+                    var vsql = "UPDATE gameasset SET asset_wage=" + pool.escape(asset_wage) + ", asset_scheme=" + pool.escape(asset_scheme) + ", asset_partyperiod=" + pool.escape(asset_partyperiod) + ", asset_player1=" + pool.escape(asset_player1) + ", asset_player2=" + pool.escape(asset_player2) + ", asset_player3=" + pool.escape(asset_player3) + ", asset_player4=" + pool.escape(asset_player4) + ", asset_player5=" + pool.escape(asset_player5) + ", asset_description=" + pool.escape(asset_description) + ", asset_url=" + pool.escape(asset_url) + ", asset_name=" + pool.escape(asset_name) + " WHERE asset_token=" + pool.escape(asset_token);
+                    if (debugon)
+                        logger.info("SQL: %s", vsql);
+                    pool.query(vsql, function (error, rows, fields) {
+                        if (error) {
+                            if (debugon)
+                                logger.error('Error: %s' + error);
+                        } else {
+                            confmail = new Mail();
+                            confmail.sendMail(req.user.email, "Atheios GDP: An existing asset has been updated: " + asset_name, 'You have updated an existing game asset.');
+                            req.flash('info', 'Asset Updated');
+                            res.redirect('/currentgame');
+                        }
+                    });
+                }
             }
+        } else {
+            req.flash('danger', 'Check the player distribution, it shall be 100% in total.');
+            res.redirect(req.headers.referer);
+
         }
     }
 });
@@ -666,7 +794,7 @@ router.post('/remove_game', [
     check('gametoken', 'Something went wrong: No asset token').notEmpty(),
     check('gamesecret', 'Something went wrong: No secret').notEmpty()
 ], function(req, res) {
-    const asset_name = req.body.gametoken;
+    const asset_name = req.body.gamename;
     const asset_token = req.body.gametoken;
     const asset_secret = req.body.gamesecret;
 
@@ -692,6 +820,83 @@ router.post('/remove_game', [
                 }
             }
         });
+
+    }
+});
+
+router.post('/highlight_game', [
+    check('gametoken', 'Something went wrong: No asset token').notEmpty(),
+    check('gamesecret', 'Something went wrong: No secret').notEmpty()
+], function(req, res) {
+    const asset_token=req.body.gametoken;
+    const asset_name=req.body.gamename;
+    const asset_secret = req.body.gamesecret;
+    const asset_period = req.body.gameperiod;
+    const asset_pot = parseInt(req.body.pot);
+    const asset_scheme = parseInt(req.body.scheme);
+
+
+    if (!MISC_validation(req)) {
+        res.redirect('/currentgame');
+    } else {
+        if (asset_pot>0 && asset_pot<100000) {
+            if (asset_scheme>0 && asset_scheme<5) {
+                // Check if there is a party mode enabled already
+                var vsql = "SELECT * FROM gameasset WHERE asset_token=" + pool.escape(asset_token);
+                logger.info("SQL: %s", vsql);
+                pool.query(vsql, function (error, rows1, fields) {
+                    if (error) {
+                        logger.error('Error: %s' + error);
+                        throw (error);
+                    } else {
+                        logger.info("%s",rows1[0].asset_partyscheme);
+                        if (rows1.length == 1 && rows1[0].asset_partyscheme==0) {
+                            var vsql = "UPDATE gameasset SET asset_partyperiod=" + pool.escape(asset_period) + ", asset_partypot=" + pool.escape(asset_pot) + ", asset_partyscheme=" + pool.escape(asset_scheme) + " WHERE asset_token=" + pool.escape(asset_token) + " AND asset_secret=" + pool.escape(asset_secret);
+                            logger.info("SQL: %s", vsql);
+                            pool.query(vsql, function (error, rows, fields) {
+                                if (error) {
+                                    logger.error('Error: %s' + error);
+                                    throw (error);
+                                } else {
+                                    if (rows.affectedRows == 1) {
+                                        email
+                                            .send({
+                                                template: 'asset_creation',
+                                                message: {
+                                                    to: req.user.email
+                                                },
+                                                locals: {
+                                                    name: req.user.displayname,
+                                                    date: pool.mysqlNow(),
+                                                    gamename: asset_name,
+                                                    messagetext: 'You will throw a party. A great idea. You are throwing in ' + asset_pot + ' coins for a period of ' + asset_scheme + '.'
+                                                }
+                                            })
+                                            .then(console.log)
+                                            .catch(console.error);
+
+                                        req.flash('info', 'Party mode invoked.');
+                                        res.redirect('/currentgame');
+                                    } else {
+                                        req.flash('danger', 'Asset secret is not matching');
+                                        res.redirect('/currentgame');
+                                    }
+                                }
+                            });
+                        } else {
+                            req.flash('danger', 'The party scheme is already invoked.');
+                            res.redirect('/currentgame');
+                        }
+                    }
+                });
+            } else {
+                req.flash('danger', 'Check Your period. should be between 1 and 4.');
+                res.redirect('/currentgame');
+            }
+        } else {
+            req.flash('danger', 'Check Your allocation, should be between 0 and 100000.');
+            res.redirect('/currentgame');
+        }
 
     }
 });

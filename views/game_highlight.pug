@@ -1,0 +1,53 @@
+extends layout
+
+block content
+    h3 Highlight game
+    .container
+    if user
+        p Here You can allocate funds which are added to the pot available for distribution at game resolution.
+        | Example: You provide 100 ATH extra. One game is played, so at game resolution then 101 ATH are distributed to You as game developer and the gamers according to rules for the game.
+        p
+        form(method='POST', action='/highlight_game')
+            .container
+                #form-group
+                label Game name:
+                input.form-control(name='gamename', type='text', value=gamename, readonly=true)
+                small#depositHelp.form-text.text-muted This is Your game name
+                br
+                #form-group
+                label Game token:
+                input.form-control(name='gametoken', type='text', value=gametoken, readonly=true)
+                small#depositHelp.form-text.text-muted This is Your game token
+                br
+                #form-group
+                label Game secret:
+                input.form-control(name='gamesecret', type='text', value=gamesecret, readonly=true)
+                br
+                #form-group
+                label Game period:
+                input.form-control(name='gameperiod', type='text', value=gameperiod, readonly=true)
+                small#depositHelp.form-text.text-muted This is Your games current period
+                br
+                #form-group
+                table.table
+                    tbody
+                        tr
+                            td.w-50
+                                label Special allocation by You for the pot on the next period:
+                                input.form-control(name='pot', type='text', value="100")
+                                br
+                            td.w-50
+                                label Allocation length:
+                                select.custom-select(name='scheme')
+                                    option(value="1" selected="true") 1 period
+                                    option(value="2") 2 periods
+                                    option(value="3") 3 periods
+                                    option(value="4") 4 periods
+
+
+            input.btn.btn-primary(type='submit',value='Allocate funds')
+            small#depositHelp.form-text.text-muted The funds will be moved from Your game account at periode switch. If You do not have the funds at that time, the action will be cancled
+
+    else
+        strong Please make sure You are logged in.
+

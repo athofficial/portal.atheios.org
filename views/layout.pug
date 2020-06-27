@@ -23,11 +23,11 @@ body
   .kpicss_bg-img
     nav.navbar.navbar-expand-lg.navbar-light
       a.navbar-brand(href='/').text-light
-        img(src='images/ath_60x60.png',width=60, alt='Atheios Game developer portal- Get Your game credentials for Atheios integration').align-middle
-        |  Atheios Game Developer Portal | #{version}
-      a.navbar-brand(href='http://bugs.atheios.org:8080/enter_bug.cgi?product=Portal', target="_blank").text-light.align-middle
+        img(src='images/portal_white_50p.png',width=120, alt='Atheios Game developer portal- Get Your game credentials for Atheios integration').align-middle
+        p.align-items-center.text-white Atheios Game Developer Portal | #{version}
+      a.navbar-brand.align-items-center(href='http://bugs.atheios.org:8080/enter_bug.cgi?product=Portal', target="_blank").text-light.align-middle
         i.fab.fa-bug.mr-1.w-4.text-white(aria-hidden="true")
-        |  Found a bug? Report it
+        | Found a bug? Report it
 
       button.navbar-toggler(type='button', data-toggle='collapse', data-target='#navbarSupportedContent', aria-controls='navbarSupportedContent', aria-expanded='false', aria-label='Toggle navigation')
         span.navbar-toggler-icon
@@ -67,8 +67,17 @@ body
               a.dropdown-item(href='https://api.atheios.org') Atheios API
               a.dropdown-item(href='https://play.atheios.org') Atheios Play
               a.dropdown-item(href='https://docs.atheios.org') Atheios documentation
+              a.dropdown-item(href='https://shop.spreadshirt.se/atheios-store') Atheios fan shop
               .dropdown-divider
               a.dropdown-item(href='https://bloxxchain.atheios.org') Bloxxchain
+
+if title == 'Home' && !user
+  header
+    // Mask
+    #intro.view
+      .mask
+    // /.Mask
+else
   .row.flex-xl-nowrap
     .col-md-3.col-xl-2.bd-sidebar
       form.bd-search.d-flex.align-items-center(role='search')
@@ -88,6 +97,9 @@ body
           ul.nav.bd-sidenav
             li
               a(href='onboarding') Onboarding
+            li
+              a(href='https://atheios.readthedocs.io') Read the docs
+
         .bd-toc-item.active
           if user
             a.bd-toc-link(href="#")
@@ -97,22 +109,6 @@ body
                 a(href='currentgame') Current game asset
               li
                 a(href='addgame') Add game asset
-
-        .bd-toc-item.active
-          if user
-            a.bd-toc-link(href="#")
-              | Portal API calls
-            ul.nav.bd-sidenav
-              li
-                a(href='') Add game result
-              li
-                a(href='') Query leader board
-              li
-                a(href='') Query player
-              li
-                a(href='') Wage play
-              li
-                a(href='') Create player
 
 
     main.col-md-9.col-xl-8.py-md-3.pl-md-5.bd-content(role='main')

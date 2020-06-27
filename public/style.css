@@ -15,7 +15,26 @@
 /*
     ADDITIONAL DEMO STYLE, NOT IMPORTANT TO MAKE THINGS WORK BUT TO MAKE IT A BIT NICER :)
 */
+html,
+body,
+header,
+#intro {
+    height: 100%;
+}
 
+#intro {
+    background: url("images/portal.jpg") no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+
+.btn-primary {
+    background-color: #c60063;
+    border-color: #c60063;
+}
 
 /*!
  * Bootstrap Docs (https://getbootstrap.com)
